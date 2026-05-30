@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    
+    // Master admin list for bootstrapping
+    function isMasterAdmin() {
+      return isSignedIn() && 
+             request.auth.token.email in ['mayfieldcellphonerepairs@gmail.com', 'mayfieldphonerepair@gmail.com'] &&
+             request.auth.token.email_verified == true;
+    }
+
+    // Admin check: verified via the /admins collection or master list
+    function isAdmin() { 
+      return isMasterAdmin() || exists(/databases/$(database)/documents/admins/$(request.auth.uid)); 
+    }
+
+    // Fetch user profile status
+    function getUserStatus(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.status;
+    }
+
+    function isActive() {
+      return isSignedIn() && (isMasterAdmin() || getUserStatus(request.auth.uid) == 'active');
+    }
+
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+
+    // --- User Profiles ---
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.keys().hasAll(['email', 'role', 'status', 'createdAt']) &&
+               data.email is string && data.email.size() <= 256 &&
+               data.role in ['admin', 'user'] &&
+               data.status in ['pending', 'active', 'suspended'] &&
+               data.createdAt is string;
+      }
+
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      
+      // Allow creation of first profile
+      allow create: if isOwner(userId) && 
+                      request.resource.data.status == (isMasterAdmin() ? 'active' : 'pending') &&
+                      request.resource.data.role == (isMasterAdmin() ? 'admin' : 'user') &&
+                      isValidUser(request.resource.data);
+      
+      // Only admins can update status/role. Users can perhaps update displayName/photoURL.
+      allow update: if (isAdmin() && isValidUser(request.resource.data)) ||
+                      (isOwner(userId) && isMasterAdmin() && isValidUser(request.resource.data)) ||
+                      (isOwner(userId) && 
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'photoURL']) &&
+                       isValidUser(request.resource.data));
+                       
+      allow delete: if isAdmin();
+
+      // --- Sub-collections for Active Users ---
+      match /settings/{settingId} {
+        allow get: if isOwner(userId) && isActive() && isValidId(settingId);
+        allow list: if isOwner(userId) && isActive();
+        allow write: if isOwner(userId) && isActive() && isValidId(settingId);
+      }
+      
+      match /invoices/{invoiceId} {
+        allow get: if isOwner(userId) && isActive() && isValidId(invoiceId);
+        allow list: if isOwner(userId) && isActive();
+        allow write: if isOwner(userId) && isActive() && isValidId(invoiceId);
+      }
+      
+      match /expenses/{expenseId} {
+        allow get: if isOwner(userId) && isActive() && isValidId(expenseId);
+        allow list: if isOwner(userId) && isActive();
+        allow write: if isOwner(userId) && isActive() && isValidId(expenseId);
+      }
+      
+      match /brands/{brandId} {
+        allow get: if isOwner(userId) && isActive() && isValidId(brandId);
+        allow list: if isOwner(userId) && isActive();
+        allow write: if isOwner(userId) && isActive() && isValidId(brandId);
+      }
+      
+      match /customers/{customerId} {
+        allow get: if isOwner(userId) && isActive() && isValidId(customerId);
+        allow list: if isOwner(userId) && isActive();
+        allow write: if isOwner(userId) && isActive() && isValidId(customerId);
+      }
+      
+      match /suppliers/{supplierId} {
+        allow get: if isOwner(userId) && isActive() && isValidId(supplierId);
+        allow list: if isOwner(userId) && isActive();
+        allow write: if isOwner(userId) && isActive() && isValidId(supplierId);
+      }
+      
+      match /leads/{leadId} {
+        allow get: if isOwner(userId) && isActive() && isValidId(leadId);
+        allow list: if isOwner(userId) && isActive();
+        allow write: if isOwner(userId) && isActive() && isValidId(leadId);
+      }
+    }
+
+    // --- Admins Collection ---
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      // Allow master admins to register themselves
+      allow write: if isAdmin() || (isOwner(adminId) && request.auth.token.email in ['mayfieldcellphonerepairs@gmail.com', 'mayfieldphonerepair@gmail.com']);
+    }
+  }
+}

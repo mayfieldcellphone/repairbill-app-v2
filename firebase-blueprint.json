@@ -1,0 +1,179 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and top-level settings",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "status": { "type": "string", "enum": ["pending", "active", "suspended"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "role", "status"]
+    },
+    "InvoiceSettings": {
+      "title": "Invoice Settings",
+      "description": "Configuration for invoices and business details",
+      "type": "object",
+      "properties": {
+        "companyName": { "type": "string" },
+        "address": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "website": { "type": "string" },
+        "primaryColor": { "type": "string" },
+        "fontFamily": { "type": "string", "enum": ["sans", "serif", "mono"] },
+        "template": { "type": "string", "enum": ["modern", "classic", "minimalist"] },
+        "showLogo": { "type": "boolean" },
+        "footerMessage": { "type": "string" },
+        "currency": { "type": "string" },
+        "taxRate": { "type": "number" },
+        "invoicePrefix": { "type": "string" },
+        "estimatePrefix": { "type": "string" },
+        "warrantyPeriod": { "type": "string" },
+        "notes": { "type": "string" },
+        "logo": { "type": "string" }
+      }
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "An invoice or estimate document",
+      "type": "object",
+      "properties": {
+        "invoiceNumber": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerEmail": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "customerCompany": { "type": "string" },
+        "customerNotes": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "dueDate": { "type": "string", "format": "date" },
+        "items": { "type": "array" },
+        "subtotal": { "type": "number" },
+        "taxAmount": { "type": "number" },
+        "total": { "type": "number" },
+        "status": { "type": "string", "enum": ["draft", "sent", "paid", "overdue", "void", "estimate"] },
+        "type": { "type": "string", "enum": ["invoice", "estimate"] },
+        "paymentMethod": { "type": "string", "enum": ["Cash", "Card", "Bank Transfer", "Other"] },
+        "userId": { "type": "string" }
+      },
+      "required": ["invoiceNumber", "customerName", "date", "total", "status", "type"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Business expense entry",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "amount": { "type": "number" },
+        "supplierId": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "status": { "type": "string", "enum": ["paid", "pending"] },
+        "reference": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["date", "description", "amount", "status"]
+    },
+    "Brand": {
+      "title": "Brand",
+      "description": "Device brand and its series/models for the catalog",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "series": { "type": "array" }
+      },
+      "required": ["name"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Customer contact information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "company": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name"]
+    },
+    "Supplier": {
+      "title": "Supplier",
+      "description": "Business supplier information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "contactPerson": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "category": { "type": "string", "enum": ["Parts", "Utilities", "Services", "Rent", "Insurance", "Other"] },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "category"]
+    },
+    "Lead": {
+      "title": "Lead",
+      "description": "Communication from the website (Contact form, Quote request, etc.)",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string" },
+        "customerEmail": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["contact", "quote", "booking", "corporate", "voice_message"] },
+        "status": { "type": "string", "enum": ["new", "read", "replied", "archived"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "metadata": { "type": "object" }
+      },
+      "required": ["customerName", "customerEmail", "message", "type", "status"]
+    }
+  },
+  "firestore": {
+    "/admins/{adminId}": {
+      "schema": "User",
+      "description": "Global administrator records"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile"
+    },
+    "/users/{userId}/settings/current": {
+      "schema": "InvoiceSettings",
+      "description": "User application settings"
+    },
+    "/users/{userId}/invoices/{invoiceId}": {
+      "schema": "Invoice",
+      "description": "User invoices and estimates"
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "User business expenses"
+    },
+    "/users/{userId}/brands/{brandId}": {
+      "schema": "Brand",
+      "description": "User custom device catalog"
+    },
+    "/users/{userId}/customers/{customerId}": {
+      "schema": "Customer",
+      "description": "User customer list"
+    },
+    "/users/{userId}/suppliers/{supplierId}": {
+      "schema": "Supplier",
+      "description": "User supplier list"
+    },
+    "/users/{userId}/leads/{leadId}": {
+      "schema": "Lead",
+      "description": "Leads and messages from website"
+    }
+  }
+}
