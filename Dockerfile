@@ -16,4 +16,6 @@ RUN npm run build
 
 # Start the server
 EXPOSE 3000
+# Cloud Run expects the app to listen on PORT environment variable, which defaults to 8080. 
+# We'll set the environment variable and we should adapt server.cjs if needed, or simply let Cloud Run set it.
 CMD ["npm", "start"]
