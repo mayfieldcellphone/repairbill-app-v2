@@ -39,8 +39,9 @@ import { TransactionsList } from './components/TransactionsList';
 import { AccountsOverview } from './components/AccountsOverview';
 import { TRANSACTIONS, METRICS } from './lib/mockData';
 import { motion, AnimatePresence } from 'motion/react';
-import { Invoice, InvoiceSettings, Expense, Brand, Customer, Supplier, Lead } from './lib/types';
+import { Invoice, InvoiceSettings, Expense, Brand, Customer, Supplier, Lead, RepairService } from './lib/types';
 import { getBrandCatalog, saveBrandOrder } from './lib/deviceStore';
+import { getSavedServices } from './lib/serviceData';
 import { cn } from '@/lib/utils';
 
 import { SettingsView } from './components/SettingsView';
@@ -57,14 +58,14 @@ import { ImportManager } from './components/ImportManager';
 import { UserManagement } from './components/UserManagement';
 import { ReportsView } from './components/ReportsView';
 
-import { CommunicationCenter } from './components/CommunicationCenter';
+import { AIPanelLeadsFeed } from './components/AIPanelLeadsFeed';
 import { useAuth } from './contexts/AuthContext';
 import { saveDocument, saveDocumentsBatch, removeDocument, subscribeToDocuments } from './lib/firestore';
 
 const MOCK_INVOICES: Invoice[] = [];
 
 function LoginPage() {
-  const { signIn, signInWithEmail, signUpWithEmail } = useAuth();
+  const { signIn, signInWithEmail, signUpWithEmail, signInDemo } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -87,7 +88,12 @@ function LoginPage() {
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'An error occurred during authentication');
+      const isAuthDomainErr = err.code?.includes('unauthorized-domain') || err.message?.includes('authorized domain');
+      if (isAuthDomainErr) {
+        setError("This domain is not authorized in your Firebase console yet. Please use the instant Sandbox Bypass buttons below to test the app with full privileges!");
+      } else {
+        setError(err.message || 'An error occurred during authentication');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -119,10 +125,13 @@ function LoginPage() {
           <motion.div 
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-semibold"
+            className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex flex-col gap-1.5 text-red-700 text-xs font-semibold leading-relaxed"
           >
-            <AlertCircle size={18} />
-            {error}
+            <div className="flex items-center gap-2 text-red-600 font-bold">
+              <AlertCircle size={16} className="shrink-0" />
+              <span>Authentication Alert</span>
+            </div>
+            <p>{error}</p>
           </motion.div>
         )}
 
@@ -202,7 +211,7 @@ function LoginPage() {
           </button>
         </form>
 
-        <div className="relative my-8">
+        <div className="relative my-7">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-slate-100"></div>
           </div>
@@ -212,14 +221,65 @@ function LoginPage() {
         </div>
 
         <button 
-          onClick={() => signIn()}
+          onClick={() => {
+            setError(null);
+            signIn().catch((err: any) => {
+              console.error(err);
+              if (err.code?.includes('unauthorized-domain') || err.message?.includes('domain')) {
+                setError("Google Auth domain not authorized yet. Use one of our dynamic Sandbox options below to sign in instantly!");
+              } else {
+                setError(err.message || 'Google Auth failed or was cancelled');
+              }
+            });
+          }}
           className="w-full flex items-center justify-center gap-3 bg-white border border-slate-200 text-slate-700 py-4 px-6 rounded-2xl font-bold hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-[0.98]"
         >
           <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
           Google Account
         </button>
 
-        <p className="text-center mt-8 text-sm font-medium text-slate-500">
+        <div className="relative my-7">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-slate-100"></div>
+          </div>
+          <div className="relative flex justify-center text-xs">
+            <span className="px-3 py-1 bg-white text-emerald-600 font-black uppercase tracking-widest text-[10px] flex items-center gap-1 bg-emerald-50 rounded-full border border-emerald-100">
+              <Sparkles size={11} className="text-emerald-500 animate-pulse" /> Direct Sandbox Bypass
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-[10px] text-slate-500 text-center leading-relaxed">
+            Running in preview? Click below to instantly log in offline & bypass security domains:
+          </p>
+          <button 
+            type="button"
+            onClick={() => signInDemo('mayfieldcellphonerepairs@gmail.com', 'Mayfield Repair Owner')}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black uppercase tracking-widest text-xs py-3.5 px-6 rounded-2xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-md shadow-emerald-100/30 active:scale-[0.98]"
+          >
+            Launch as Owner (Admin Role)
+          </button>
+          
+          <div className="grid grid-cols-2 gap-2">
+            <button 
+              type="button"
+              onClick={() => signInDemo('technician@mayfieldrepairs.com', 'Lead Tech')}
+              className="text-center bg-slate-50 border border-slate-100 text-slate-600 font-bold uppercase tracking-wider text-[10px] py-2.5 px-4 rounded-xl hover:bg-slate-100 transition-all"
+            >
+              Log in as Staff
+            </button>
+            <button 
+              type="button"
+              onClick={() => signInDemo('guest@testing.com', 'Testing Guest')}
+              className="text-center bg-slate-50 border border-slate-100 text-slate-600 font-bold uppercase tracking-wider text-[10px] py-2.5 px-4 rounded-xl hover:bg-slate-100 transition-all"
+            >
+              Log in as Guest
+            </button>
+          </div>
+        </div>
+
+        <p className="text-center mt-6 text-sm font-medium text-slate-500">
           {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
           <button 
             onClick={() => {
@@ -247,30 +307,36 @@ export default function App() {
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [brands, setBrands] = useState<Brand[]>(() => getBrandCatalog());
+  const [services, setServices] = useState<RepairService[]>(() => getSavedServices());
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [settings, setSettings] = useState<InvoiceSettings>({
-    companyName: 'Mayfield Repairs',
+    companyName: 'Mayfield Phone Repair',
     address: '123 Repair St, Tech City',
-    email: 'contact@mayfield.com',
+    email: 'contact@mayfieldphonerepair.com.au',
     phone: '0400 123 456',
-    website: 'www.mayfieldrepairs.com',
+    website: 'https://mayfieldphonerepair.com.au',
     primaryColor: '#2563eb',
     fontFamily: 'sans',
     template: 'modern',
     showLogo: true,
-    footerMessage: 'Thank you for choosing Mayfield Cell Phone Repairs!',
-    currency: 'USD',
+    footerMessage: 'Thank you for choosing Mayfield Phone Repair!',
+    currency: 'AUD',
     taxRate: 10,
     invoicePrefix: 'INV-',
     estimatePrefix: 'EST-',
     warrantyPeriod: '90 Days',
     appTheme: 'modern',
-    taxInclusive: false,
+    taxInclusive: true,
     charlaApiKey: '',
-    creationFlowOrder: 'brand-first'
+    creationFlowOrder: 'brand-first',
+    aiProvider: 'gemini',
+    geminiApiKey: '',
+    geminiModel: 'gemini-3.5-flash',
+    openaiApiKey: '',
+    openaiEndpoint: ''
   });
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
 
@@ -343,6 +409,39 @@ export default function App() {
       setLeads(data);
     });
   }, [user]);
+
+  // Sync Services from Firestore
+  useEffect(() => {
+    if (!user) return;
+    return subscribeToDocuments<RepairService>(`users/${user.uid}/services`, (data) => {
+      if (data.length > 0) {
+        // Sort by 'order' if it exists, fallback to name or existing order
+        const sorted = [...data].sort((a, b) => {
+          if (a.order !== undefined && b.order !== undefined) {
+             return a.order - b.order;
+          }
+          return 0; // maintain original if order not found
+        });
+        setServices(sorted);
+        localStorage.setItem('honeybill_custom_services', JSON.stringify(sorted));
+      }
+    });
+  }, [user]);
+
+  const handleServicesUpdate = async (updatedServices: RepairService[], deletedServiceId?: string) => {
+    setServices(updatedServices);
+    localStorage.setItem('honeybill_custom_services', JSON.stringify(updatedServices));
+    if (user) {
+      if (deletedServiceId) {
+        await removeDocument(`users/${user.uid}/services`, deletedServiceId);
+      }
+      const batchData = updatedServices.map(s => ({
+        id: s.id,
+        data: s
+      }));
+      await saveDocumentsBatch(`users/${user.uid}/services`, batchData);
+    }
+  };
 
   const nextInvoiceNumber = useMemo(() => {
     if (invoices.length === 0) return 1;
@@ -476,6 +575,37 @@ export default function App() {
             <h1 className="text-2xl font-black text-slate-800 mb-2 tracking-tight">Account Suspended</h1>
             <p className="text-slate-500 font-medium leading-relaxed text-sm">
               Your access to the platform has been restricted. Please contact our support team for more information.
+            </p>
+          </div>
+          <button 
+            onClick={() => logout()}
+            className="w-full py-4 px-6 rounded-2xl border border-slate-200 text-slate-600 font-black uppercase tracking-widest text-xs hover:bg-slate-50 transition-all"
+          >
+            Log Out
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  const isTrialExpired = profile && profile.role !== 'admin' && profile.createdAt && 
+    (Math.ceil((new Date().getTime() - new Date(profile.createdAt).getTime()) / (1000 * 60 * 60 * 24)) > 90);
+
+  if (isTrialExpired) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-md bg-white rounded-[32px] shadow-2xl p-10 text-center space-y-6 border border-slate-100"
+        >
+          <div className="w-20 h-20 bg-purple-100 text-purple-600 rounded-[24px] flex items-center justify-center mx-auto">
+             <AlertCircle size={40} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-slate-800 mb-2 tracking-tight">Trial Expired</h1>
+            <p className="text-slate-500 font-medium leading-relaxed text-sm">
+              Your 3-month free trial has ended. Please contact the administrator to renew your access to the platform.
             </p>
           </div>
           <button 
@@ -781,7 +911,6 @@ export default function App() {
                activeTab === 'bas' ? 'BAS Tax Calculation' :
                activeTab === 'ai-agent' ? 'Repair AI Assistant' :
                activeTab === 'customers' ? 'Customer Database' :
-               activeTab === 'inbox' ? 'Communication Center' :
                activeTab === 'settings' ? 'System Settings' : 
                activeTab === 'reports' ? 'Performance Reports' :
                activeTab === 'import' ? 'Legacy Data Import' :
@@ -899,6 +1028,8 @@ export default function App() {
                 <CatalogView 
                   brands={brands} 
                   onCatalogUpdate={handleCatalogUpdate}
+                  services={services}
+                  onServicesUpdate={handleServicesUpdate}
                 />
               </motion.div>
             ) : activeTab === 'import' ? (
@@ -959,22 +1090,35 @@ export default function App() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="max-w-3xl mx-auto"
+                className="max-w-7xl mx-auto"
               >
-                <AIInvoiceAgent 
-                   settings={settings}
-                   brands={brands}
-                   invoices={invoices}
-                   expenses={expenses}
-                   leads={leads}
-                   nextInvoiceNumber={nextInvoiceNumber}
-                   onInvoiceCreated={handleInvoiceCreated}
-                   onExpenseCreated={addExpense}
-                   onCatalogUpdated={handleCatalogUpdate}
-                   onClose={() => setActiveTab('dashboard')}
-                   setActiveTab={setActiveTab}
-                   startListening={activeTab === 'ai-agent-voice'}
-                />
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                  <div className="lg:col-span-7 xl:col-span-8">
+                    <AIInvoiceAgent 
+                       settings={settings}
+                       brands={brands}
+                       invoices={invoices}
+                       expenses={expenses}
+                       leads={leads}
+                       nextInvoiceNumber={nextInvoiceNumber}
+                       onInvoiceCreated={handleInvoiceCreated}
+                       onExpenseCreated={addExpense}
+                       onCatalogUpdated={handleCatalogUpdate}
+                       onClose={() => setActiveTab('dashboard')}
+                       setActiveTab={setActiveTab}
+                       startListening={activeTab === 'ai-agent-voice'}
+                    />
+                  </div>
+                  <div className="lg:col-span-5 xl:col-span-4">
+                    <AIPanelLeadsFeed 
+                       leads={leads}
+                       settings={settings}
+                       onUpdateLead={updateLead}
+                       onDeleteLead={deleteLead}
+                       onConvertToQuote={handleConvertToQuote}
+                    />
+                  </div>
+                </div>
               </motion.div>
             ) : activeTab === 'customers' ? (
               <motion.div
@@ -996,6 +1140,7 @@ export default function App() {
                   settings={settings} 
                   setSettings={handleSettingsUpdate} 
                   onBrandsReordered={handleBrandsReordered}
+                  onCatalogUpdate={handleCatalogUpdate}
                 />
               </motion.div>
             ) : activeTab === 'users' && isMasterAdmin ? (
@@ -1007,22 +1152,6 @@ export default function App() {
                 className="max-w-6xl mx-auto"
               >
                 <UserManagement />
-              </motion.div>
-            ) : activeTab === 'inbox' ? (
-              <motion.div
-                key="inbox"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-              >
-                <CommunicationCenter 
-                  leads={leads}
-                  settings={settings}
-                  onUpdateLead={updateLead}
-                  onAddLead={addLead}
-                  onDeleteLead={deleteLead}
-                  onConvertToQuote={handleConvertToQuote}
-                />
               </motion.div>
             ) : (activeTab === 'invoices' || activeTab === 'estimates') ? (
               <motion.div
@@ -1062,6 +1191,8 @@ export default function App() {
                       initialType={creatorType}
                       brands={brands}
                       onCatalogUpdate={handleCatalogUpdate}
+                      services={services}
+                      onServicesUpdate={handleServicesUpdate}
                       onClose={() => {
                         setShowCreator(false);
                         setEditingInvoice(null);

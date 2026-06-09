@@ -83,6 +83,7 @@ export interface RepairService {
   category: 'hardware' | 'software' | 'accessory' | 'other';
   basePrice: number;
   hidden?: boolean;
+  order?: number;
 }
 
 export interface InvoiceItem {
@@ -120,6 +121,11 @@ export interface InvoiceSettings {
   charlaApiKey?: string;
   creationFlowOrder?: 'brand-first' | 'service-first';
   dashboardServiceIds?: string[];
+  aiProvider?: 'gemini' | 'openai';
+  geminiApiKey?: string;
+  geminiModel?: string;
+  openaiApiKey?: string;
+  openaiEndpoint?: string;
 }
 
 export interface Customer {

@@ -13,12 +13,229 @@ import {
   Clock,
   Layout,
   MessageSquare,
-  LineChart
+  LineChart,
+  X,
+  Calendar,
+  BookOpen
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { AIAgentLandingView } from './AIAgentLandingView';
+
+function parseMarkdownLinks(text: string) {
+  const regex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index));
+    }
+    parts.push(
+      <a 
+        key={match.index} 
+        href={match[2]} 
+        target="_blank" 
+        rel="noopener noreferrer" 
+        className="text-blue-600 hover:underline font-bold"
+      >
+        {match[1]}
+      </a>
+    );
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : text;
+}
+
+const allBlogPosts = [
+  {
+    title: "How to choose the best Cell Phone Repair POS in 2026",
+    category: "Operations",
+    image: "https://images.unsplash.com/photo-1601524909162-adc8723d5c88?q=80&w=2670&auto=format&fit=crop",
+    tag: "Must Read",
+    date: "May 15, 2026",
+    readTime: "5 min read",
+    author: "Devin Mayfield",
+    summary: "Standard registers don't cut it anymore on modern benches. Learn how cloud native flow, real-time ticket statuses, and instant parts synchronization can transform your repair operations this year.",
+    content: [
+      {
+        section: "The Demise of Clunky POS Systems",
+        text: "In 2026, choosing a point-of-sale system is no longer just about registering card payments and printing paper receipts. For busy electronic repair workshops, the POS acts as the heart of the entire shop—coordinating incoming tickets, technician assignments, inventory supply, and communication with clients. Live-tested and optimized in real-time at Newcastle's premier flagship workshop, [Mayfield Phone Repair](https://mayfieldphonerepair.com.au), we discovered that standard registers fall short of contemporary needs."
+      },
+      {
+        section: "Key Feature #1: Seamless Intake with Device Intake Diagnostics",
+        text: "A bottleneck at the front counter is a bottleneck for your profit margins. Your POS must enable rapid intake: recording physical imperfections (scratches, dents), pre-repair function checkmarks (cameras, FaceID, port charging), and snapping instant high-res bench photographs."
+      },
+      {
+        section: "Key Feature #2: Intelligent Parts-To-Ticket Pairing",
+        text: "Avoid the nightmare of matching wrong replacement screens. A modern solution synchronizes your physical inventory catalogs with your active service tickets, ensuring the parts are instantly reserved for the technician on the bench."
+      },
+      {
+        section: "Key Feature #3: Native AI-Powered Workflow",
+        text: "Manual data input is slow and prone to errors. AI-driven repair logs analyze conversational bench notes (e.g., 'cracked front glass, customer needs new battery too and express express delivery') and automatically translate them into itemized charges, saving hours of office admin."
+      },
+      {
+        section: "Local Compliance Matters: BAS and GST Sync",
+        text: "For operators based in Australia, accounting rules are highly specific. An ideal POS system shouldn't require third-party workarounds; it should directly track GST outlays per purchase, calculate appropriate taxable lines, and compile ready-to-use Business Activity Statements (BAS) summaries."
+      }
+    ]
+  },
+  {
+    title: "Top 5 Inventory Management tips for Phone Shops",
+    category: "Inventory",
+    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=2574&auto=format&fit=crop",
+    tag: "New",
+    date: "May 28, 2026",
+    readTime: "4 min read",
+    author: "Devin Mayfield",
+    summary: "Excess part inventory stalls cash flow, while missing simple batteries loses deals. Optimize replacement component levels, track bin zones, and prevent dead capital using these five tips.",
+    content: [
+      {
+        section: "Why Inventory is Your Biggest Profit Leak",
+        text: "Cell phone replacement parts are highly granular and rapidly depreciate. A screen that costs $150 wholesale can dwindle in value to $40 as newer device generations release. Working with high-volume stores like [Mayfield Phone Repair](https://mayfieldphonerepair.com.au) highlights that efficient, lean stock tracking is crucial to keeping your shop in the green."
+      },
+      {
+        section: "1. Group Small Consumables into Standard 'Kits'",
+        text: "Stop scanning individual adhesive stickers, screen frames, or FPC connectors. Batch common components into unified replacement kits, ensuring small margins aren't lost to untracked miscellaneous parts."
+      },
+      {
+        section: "2. Track High-Value Screen and Logic Assemblies by Serial",
+        text: "Verify supplier warranty claims with precision. By assigning serial numbers to expensive screens or batteries, you can easily trace which vendor provided a defective unit and file hassle-free RMA claims."
+      },
+      {
+        section: "3. Establish Automated Stock Reorder Triggers",
+        text: "Do not wait until you run completely dry. Define logical safe stock limits (e.g. minimum 3 pieces of iPhone 13 replacement screens) so notifications trigger automatically when inventory thresholds are breached."
+      },
+      {
+        section: "4. Standardize Alphanumeric Storage Locations",
+        text: "Time spent hunting around the shop is time lost. Assign visual bins and catalog codes (e.g. Rack B, Row 4, Bin 1 for charging ports) so any apprentice tech can locate stock in seconds."
+      },
+      {
+        section: "5. Run High-Speed Monthly Audits on Legacy Parts",
+        text: "Quickly clear out unsold glass, batteries, and covers for outdated models (e.g., older model iPads or iPhone 8/X) before they turn into complete dead capital. Liquidate them or swap them for higher volume replacements."
+      }
+    ]
+  },
+  {
+    title: "Why legacy software like RepairDesk is slowing your bench",
+    category: "Tech Strategy",
+    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=2670&auto=format&fit=crop",
+    tag: "Opinion",
+    date: "May 10, 2026",
+    readTime: "6 min read",
+    author: "Devin Mayfield",
+    summary: "Outdated software built on slow infrastructure frustrates technicians and delays customer checkouts. Learn why cloud native architecture and single screen workflow are replacing legacy bloat.",
+    content: [
+      {
+        section: "The Real Cost of Stale Software",
+        text: "Many local mobile repair operators keep utilizing old platforms like RepairDesk out of pure fatigue. But legacy interfaces require constant page refreshes, struggle with laggy mobile responsive formats, and lack the clean focus requested by active bench technicians."
+      },
+      {
+        section: "Frustration #1: Endless Page Refreshes and Loading States",
+        text: "In busy workshops, pace is key. Legacy POS systems were designed over a decade ago. Changing a simple ticket from 'In Queue' to 'Under Repair' requires reloading database schemas, opening secondary submenus, and clicking 'Confirm'."
+      },
+      {
+        section: "Frustration #2: Confusing Multi-Tab Navigation",
+        text: "A technician shouldn't require a college degree to operate a POS screen. Having to toggle three distinct tabs to find standard device specs, client approval notices, or internal workshop notes dilutes bench concentration."
+      },
+      {
+        section: "Frustration #3: The Abrupt Lack of Modern AI Support",
+        text: "Entering exact descriptions, repair labor billing, and tracking detailed faults manually is tedious. Modern cloud-native tools allow technicians to type simple notes, immediately auto-generating clean invoice descriptions and pricing."
+      },
+      {
+        section: "Modern Solution: Liquid Fast, Single Screen Workspace",
+        text: "Transitioning to a dynamic, single-screen desktop layout designed specifically around technician behavior ensures items are checked out in under 30 seconds. On-site audits at active workbenches like [Mayfield Phone Repair](https://mayfieldphonerepair.com.au) prove that eliminating page refreshes elevates daily ticket clearance speed by up to 40%."
+      }
+    ]
+  },
+  {
+    title: "Dynamic wholesale parts sourcing: Maximizing shop margin",
+    category: "Supply Chain",
+    image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=2670&auto=format&fit=crop",
+    tag: "Pro-Tip",
+    date: "April 29, 2026",
+    readTime: "5 min read",
+    author: "Devin Mayfield",
+    summary: "Relying on a single hardware vendor can constrain your margins by up to 20%. Let's explore how to spread vendor channels and optimize bulk parts acquisition securely.",
+    content: [
+      {
+        section: "The Danger of Single-Vendor Dependency",
+        text: "Many smartphone repair counters source 100% of their screens, ports, and batteries from a single distributor out of convenience. However, if that supplier faces stock shortages or raises premium rates, your shop's bottom line takes a direct hit. Leading workshops, including [Mayfield Phone Repair](https://mayfieldphonerepair.com.au), diversify their vendor pipelines to remain resilient against pricing shifts."
+      },
+      {
+        section: "Analyze Vendor Tiers for Core Models",
+        text: "Always maintain relationships with at least three reputable distributors. Keep spreadsheets tracking who offers the best reliability scores for iPhone screen quality, wholesale pricing for ipad assemblies, and battery safety certifications."
+      },
+      {
+        section: "Leverage Volume Commitments for Key Commodities",
+        text: "For highly recurring repairs (such as battery swaps for common devices), bulk ordering 50+ units directly from wholesale import hubs earns substantial discounts of 15% to 30%, which flows directly into your net profit margin."
+      },
+      {
+        section: "Assess Original vs. Premium Aftermarket Sourcing",
+        text: "Educate your team on when standard quality is acceptable versus when a client expects premium high-brightness panels. This transparency builds long-term customer trust and sets your shop apart."
+      }
+    ]
+  },
+  {
+    title: "Explaining TrueTone and screen serialization to customers",
+    category: "Operations",
+    image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=2680&auto=format&fit=crop",
+    tag: "Guides",
+    date: "April 14, 2026",
+    readTime: "4 min read",
+    author: "Devin Mayfield",
+    summary: "With device manufacturers locking down hardware components, technicians must learn how to handle serialization errors and proactively educate customers about display messages.",
+    content: [
+      {
+        section: "The Battle Over Screen Repair Serialization",
+        text: "As smartphone developers increasingly implement part-pairing restrictions, swapping displays can prompt standard alerts (such as 'Important Display Message') even when using premium OEM spares. Explaining this gracefully to a client is a highly requested skill."
+      },
+      {
+        section: "Why TrueTone and Serialization Are Used",
+        text: "Manufacturers link displays and batteries directly to specific logic boards via internal micro-controllers. Removing a broken screen breaks this secure link. To restore full functionality like TrueTone, technicians must transfer original IC chips or utilize advanced screen programmers."
+      },
+      {
+        section: "Create Pre-Emptive Transparency",
+        text: "Never let a client notice an alert message post-repair by surprise. Inform them of manufacturer component matching and write explicit warranty parameters inside the digital invoice workspace to maintain credibility. Leading local businesses, like Newcastle's [Mayfield Phone Repair](https://mayfieldphonerepair.com.au), master this conversation right at the initial intake desk."
+      },
+      {
+        section: "Crafting Professional Bench Counter Responses",
+        text: "Implement a standardized explanation script: 'To achieve competitive pricing and rapid turn-around, we use premium non-serialized replacement displays. These are calibrated to match factory tolerances, though standard iOS diagnostics might flag the part.'"
+      }
+    ]
+  },
+  {
+    title: "How AI auto-extraction is revolutionizing the workshop",
+    category: "AI Technology",
+    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop",
+    tag: "Future Tech",
+    date: "April 02, 2026",
+    readTime: "4 min read",
+    author: "Devin Mayfield",
+    summary: "Writing structured invoices and labor lines manually is a key bottleneck. Discover how AI transforms unstructured bench notes into accurate billing sheets instantly.",
+    content: [
+      {
+        section: "The Friction of Manual Billing on the Bench",
+        text: "When a technician is deep in a complex microsoldering rebuild, the last thing they want to do is open catalog templates, search for separate parts, and type tedious, formal line-item pricing. They often record brief thoughts like 'fixed charging IC, swapped battery'."
+      },
+      {
+        section: "The AI Translation Engine",
+        text: "Enterprise AI tools read conversational tech notes and seamlessly convert them into detailed customer invoices. For instance, 'iphone11 water damage fix dynamic PMIC + aftermarket battery + 30m testing' turns into beautifully itemized service entries categorized perfectly under parts and labor."
+      },
+      {
+        section: "Improving Workshop Operations",
+        text: "This integration saves roughly 12 minutes of administrative billing labor per repair ticket, allows instant generation of customer estimate quotes, and ensures part inventories stay perfectly synchronized automatically. Our primary pilot workshop partner, [Mayfield Phone Repair](https://mayfieldphonerepair.com.au), reported a massive reduction in check-out bottlenecks after deploying AI auto-drafts of bench invoices."
+      }
+    ]
+  }
+];
 
 export function LandingPage() {
   const { signIn, signInWithEmail, signUpWithEmail } = useAuth();
@@ -31,6 +248,8 @@ export function LandingPage() {
   const [error, setError] = useState<string | null>(null);
   const [landingSection, setLandingSection] = useState<'main' | 'ai-agent'>('main');
   const [activePolicy, setActivePolicy] = useState<'privacy' | 'terms' | null>(null);
+  const [selectedBlogPost, setSelectedBlogPost] = useState<any | null>(null);
+  const [showAllBlogs, setShowAllBlogs] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,32 +274,32 @@ export function LandingPage() {
     {
       icon: <Sparkles className="text-blue-600" />,
       title: "AI Repair Assistant",
-      description: "Auto-extract repair details from notes or images. Our AI agent drafts professional invoices, predicts repair times, and assists technicians in real-time."
+      description: "Auto-extract repair details from raw notes or bench images. Our AI agent instantly drafts professional invoices, predicts repair times, and assists technicians in real-time."
     },
     {
       icon: <Layout className="text-purple-600" />,
       title: "Custom Service Catalog",
-      description: "Manage a deep hierarchy of Brands, Models, and Series. Pre-set pricing for common repairs like screen swaps and battery replacements."
+      description: "Manage a deep hierarchy of Brands, Series, and Models. Pre-set custom pricing for common repairs like screen swaps, battery replacements, and port fixes."
     },
     {
       icon: <Users className="text-emerald-600" />,
       title: "Staff & Permissions",
-      description: "Manage your entire team across multiple benches. Assign roles, track productivity, and secure sensitive financial data with ease."
+      description: "Manage your entire team across multiple workbenches. Assign distinct technician or admin roles, control access levels, and secure sensitive financial charts."
     },
     {
       icon: <BarChart3 className="text-amber-600" />,
       title: "BAS & GST Engine",
-      description: "Precision-engineered for Australian shops. Generate GST reports and BAS summaries for your accountant in one click."
+      description: "Precision-engineered accounting module for modern shops. Automatically calculate GST outlays, track expenses, and export BAS summaries for your accountant."
     },
     {
       icon: <MessageSquare className="text-rose-600" />,
-      title: "Universal Web Sync",
-      description: "Connect your existing website directly to your inbox. Receive leads, quote requests, and customer inquiries instantly."
+      title: "Live Lead & Website Sync",
+      description: "Synchronize live leads from your workshop website directly to your bench. Convert inquiries, bookings, or cold leads into repair quotes in a single click."
     },
     {
       icon: <LineChart className="text-indigo-600" />,
-      title: "Financial Analytics",
-      description: "Deep dive into profit margins, expense trends, and top-performing repair services with integrated monthly and quarterly reports."
+      title: "Dynamic Invoicing Core",
+      description: "Draft digital invoices or print-ready layouts. Customize brand styling, default warranty terms, notes, and currency settings to match your local market."
     }
   ];
 
@@ -98,7 +317,10 @@ export function LandingPage() {
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div 
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+          >
             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
               <Smartphone className="text-white" size={20} />
             </div>
@@ -106,10 +328,30 @@ export function LandingPage() {
           </div>
           
           <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors">Features</a>
-            <a href="#comparison" className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors tracking-tight">Software Comparison</a>
-            <a href="#blog" className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors">Insights</a>
-            <a href="#about" className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors">About</a>
+            <button 
+              onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} 
+              className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors cursor-pointer"
+            >
+              Features
+            </button>
+            <button 
+              onClick={() => document.getElementById('comparison')?.scrollIntoView({ behavior: 'smooth' })} 
+              className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors tracking-tight cursor-pointer"
+            >
+              Software Comparison
+            </button>
+            <button 
+              onClick={() => document.getElementById('blog')?.scrollIntoView({ behavior: 'smooth' })} 
+              className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors cursor-pointer"
+            >
+              Insights
+            </button>
+            <button 
+              onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })} 
+              className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors cursor-pointer"
+            >
+              About
+            </button>
           </div>
 
           <div className="flex items-center gap-4">
@@ -137,9 +379,10 @@ export function LandingPage() {
             animate={{ opacity: 1, x: 0 }}
             className="space-y-8"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
-              <Zap size={14} className="fill-current" />
-              The #1 Choice for Repair Shops
+            <div className="inline-flex flex-wrap items-center gap-1.5 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
+              <Zap size={14} className="fill-current animate-pulse" />
+              <span>Developed with</span>
+              <a href="https://mayfieldphonerepair.com.au" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-800 font-extrabold text-blue-700 transition-all">Mayfield Phone Repair</a>
             </div>
             <h1 className="text-6xl md:text-8xl font-black text-slate-900 leading-[0.9] tracking-tighter">
               Mobile Repair shop <span className="text-blue-600">POS.</span>
@@ -438,48 +681,46 @@ export function LandingPage() {
                 Master the art of the bench. Expert tips on scaling your <strong>electronic repair shop</strong>.
               </p>
             </div>
-            <button className="flex items-center gap-2 text-blue-600 font-black uppercase tracking-widest text-[10px] bg-white px-8 py-4 rounded-full border border-slate-200 shadow-sm hover:shadow-md transition-all">
-              View All Articles <ArrowRight size={14} />
+            <button 
+              onClick={() => setShowAllBlogs(!showAllBlogs)}
+              className="flex items-center gap-2 text-blue-600 font-black uppercase tracking-widest text-[10px] bg-white px-8 py-4 rounded-full border border-slate-200 shadow-sm hover:shadow-md transition-all hover:bg-slate-50"
+            >
+              {showAllBlogs ? "Show Curated Articles" : "View All Articles"} <ArrowRight size={14} className={cn("transition-transform", showAllBlogs && "rotate-90")} />
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                title: "How to choose the best Cell Phone Repair POS in 2026",
-                category: "Operations",
-                image: "https://images.unsplash.com/photo-1601524909162-adc8723d5c88?q=80&w=2670&auto=format&fit=crop",
-                tag: "Must Read"
-              },
-              {
-                title: "Top 5 Inventory Management tips for Phone Shops",
-                category: "Inventory",
-                image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=2574&auto=format&fit=crop",
-                tag: "New"
-              },
-              {
-                title: "Why legacy software like RepairDesk is slowing your bench",
-                category: "Tech Strategy",
-                image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=2670&auto=format&fit=crop",
-                tag: "Opinion"
-              }
-            ].map((post, i) => (
+            {(showAllBlogs ? allBlogPosts : allBlogPosts.slice(0, 3)).map((post, i) => (
               <motion.div 
                 key={i}
                 whileHover={{ y: -10 }}
-                className="group cursor-pointer"
+                onClick={() => setSelectedBlogPost(post)}
+                className="group cursor-pointer bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between min-h-[420px]"
               >
-                <div className="aspect-[16/10] bg-slate-200 rounded-[32px] mb-6 overflow-hidden relative">
-                  <img src={post.image} alt={post.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" referrerPolicy="no-referrer" />
-                  <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest text-slate-900 border border-white">
-                    {post.category}
+                <div>
+                  <div className="aspect-[16/10] bg-slate-200 rounded-[32px] mb-6 overflow-hidden relative">
+                    <img src={post.image} alt={post.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" referrerPolicy="no-referrer" />
+                    <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest text-slate-900 border border-white">
+                      {post.category}
+                    </div>
+                  </div>
+                  <div className="px-2 space-y-3">
+                     <p className="text-[10px] font-black uppercase tracking-widest text-blue-600">{post.tag}</p>
+                     <h3 className="text-xl font-black text-slate-800 leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">
+                       {post.title}
+                     </h3>
+                     {post.summary && (
+                       <p className="text-xs text-slate-400 font-medium line-clamp-3 mt-1 leading-relaxed">
+                         {post.summary}
+                       </p>
+                     )}
                   </div>
                 </div>
-                <div className="px-2 space-y-3">
-                   <p className="text-[10px] font-black uppercase tracking-widest text-blue-600">{post.tag}</p>
-                   <h3 className="text-xl font-black text-slate-800 leading-tight group-hover:text-blue-600 transition-colors">
-                     {post.title}
-                   </h3>
+                <div className="px-2 pt-4 border-t border-slate-50 mt-4 flex items-center justify-between text-slate-400 text-[10px] font-black uppercase tracking-wider">
+                  <span>{post.readTime}</span>
+                  <span className="text-blue-600 group-hover:underline flex items-center gap-1 font-black">
+                    Read Article <ChevronRight size={12} />
+                  </span>
                 </div>
               </motion.div>
             ))}
@@ -533,10 +774,10 @@ export function LandingPage() {
               Built by technicians, <span className="text-blue-600">for technicians.</span>
             </h2>
             <p className="text-lg text-slate-500 font-medium leading-relaxed">
-              RepairBill started in the back of a small repair kiosk. We knew that existing POS systems were too bloated, too slow, and lacked the specialized tools repair shops actually need.
+              RepairBill was originally developed and rigorously field-tested in collaboration with the premium workshop team at <a href="https://mayfieldphonerepair.com.au" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-bold">Mayfield Phone Repair</a>. From active workbenches in Newcastle, we discovered that existing POS platforms were too slow, bloated, and disconnected from daily diagnostic reality.
             </p>
             <p className="text-lg text-slate-500 font-medium leading-relaxed">
-              Our mission is to empower local repair shops with the same level of technology that massive tech giants use. From AI parts-detection to automated customer follow-ups, we're here to help you clear your bench faster.
+              Designed as the flagship system for <a href="https://mayfieldphonerepair.com.au" target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-blue-600 hover:underline font-bold">Mayfield Phone Repair</a>, our core platform delivers the exact speed and AI capabilities required to handle high-volume device turnarounds, instant supplier inventory matching, and direct customer SMS notifications.
             </p>
             <div className="grid grid-cols-2 gap-8 pt-4">
                <div>
@@ -559,7 +800,10 @@ export function LandingPage() {
       <footer className="bg-slate-50 border-t border-slate-100 pt-24 pb-12 px-6">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
           <div className="space-y-6">
-            <div className="flex items-center gap-2">
+            <div 
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+            >
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <Smartphone className="text-white" size={16} />
               </div>
@@ -661,7 +905,7 @@ export function LandingPage() {
               {activePolicy === 'privacy' ? (
                 <>
                   <p>
-                    At <strong>RepairBill</strong>, accessible from <strong>test.repairbill.shop</strong> and our service domains, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by RepairBill and how we use it.
+                    At <strong>RepairBill</strong>, accessible from <strong>repairbill.shop</strong> and our service domains, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by RepairBill and how we use it.
                   </p>
                   <h4 className="font-extrabold text-slate-800">1. Information We Collect</h4>
                   <p>
@@ -704,6 +948,122 @@ export function LandingPage() {
               >
                 Close & Accept
               </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Blog/Insights Post Detail Modal Overlay */}
+      {selectedBlogPost && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            onClick={() => setSelectedBlogPost(null)}
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+          />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="relative w-full max-w-3xl bg-white rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+          >
+            {/* Top Close Button in Modal */}
+            <button 
+              onClick={() => setSelectedBlogPost(null)}
+              className="absolute top-6 right-6 p-3 bg-white/80 hover:bg-white text-slate-800 hover:text-blue-600 transition-all rounded-full border border-slate-100 shadow-md backdrop-blur-sm z-30 flex items-center justify-center"
+            >
+              <X size={18} />
+            </button>
+
+            {/* Scrollable Hero + Content Area */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Image Header */}
+              <div className="relative w-full h-[240px] md:h-[300px]">
+                <img 
+                  src={selectedBlogPost.image} 
+                  alt={selectedBlogPost.title} 
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent" />
+                <div className="absolute bottom-6 left-8 md:left-10 right-8 md:right-10">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="bg-blue-600 text-white px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest">
+                      {selectedBlogPost.category}
+                    </span>
+                    <span className="bg-white/20 backdrop-blur-md text-white px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-white/10">
+                      {selectedBlogPost.tag}
+                    </span>
+                  </div>
+                  <h1 className="text-xl md:text-3xl font-extrabold text-white tracking-tight leading-tight">
+                    {selectedBlogPost.title}
+                  </h1>
+                </div>
+              </div>
+
+              {/* Body Content */}
+              <div className="px-8 md:px-10 py-8 space-y-6 select-text">
+                {/* Meta details */}
+                <div className="flex flex-wrap items-center gap-y-2 gap-x-6 border-b border-slate-100 pb-5 text-xs text-slate-400 font-bold uppercase tracking-wider">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-blue-600 rounded-full" />
+                    <span>By {selectedBlogPost.author}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Calendar size={13} />
+                    <span>{selectedBlogPost.date}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Clock size={13} />
+                    <span>{selectedBlogPost.readTime}</span>
+                  </div>
+                </div>
+
+                {/* Main Summary */}
+                <p className="text-base text-slate-600 font-semibold leading-relaxed border-l-4 border-blue-600 pl-4 bg-blue-50/40 py-3 rounded-r-2xl">
+                  {parseMarkdownLinks(selectedBlogPost.summary)}
+                </p>
+
+                {/* Article blocks */}
+                <div className="space-y-6 text-sm md:text-base text-slate-500 font-medium leading-relaxed">
+                  {selectedBlogPost.content?.map((block: any, idx: number) => (
+                    <div key={idx} className="space-y-2">
+                      <h3 className="text-base md:text-lg font-bold text-slate-800 tracking-tight">
+                        {block.section}
+                      </h3>
+                      <p className="text-slate-600 whitespace-pre-line leading-relaxed text-sm">
+                        {parseMarkdownLinks(block.text)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Action CTA */}
+                <div className="mt-8 p-6 rounded-3xl bg-slate-50 border border-slate-100 text-center space-y-3">
+                  <h4 className="text-base font-black text-slate-900">Empower your bench with modern POS & AI.</h4>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                    Ready to leave laggy, bloated software behind? Let RepairBill handle your invoices, parts, and customer SMS automatically.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                    <button 
+                      onClick={() => {
+                        setSelectedBlogPost(null);
+                        setIsLogin(false);
+                        setShowAuthModal(true);
+                      }}
+                      className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-[10px] font-black tracking-tight uppercase shadow-lg shadow-blue-200 hover:bg-blue-700 transition"
+                    >
+                      Get Started Free
+                    </button>
+                    <button 
+                      onClick={() => setSelectedBlogPost(null)}
+                      className="bg-white border border-slate-200 text-slate-600 px-5 py-2.5 rounded-xl text-[10px] font-black tracking-tight uppercase hover:bg-slate-50 transition"
+                    >
+                      Keep Reading
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.div>
         </div>

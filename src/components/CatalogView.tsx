@@ -1,20 +1,29 @@
 import React, { useState, useRef } from 'react';
 import { REPAIR_SERVICES as STATIC_SERVICES, getSavedServices } from '../lib/serviceData';
+import { saveCustomBrand, saveCustomModel, getBrandCatalog } from '../lib/deviceStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Search, ChevronRight, Laptop, Smartphone, Watch, Tablet, Download, Upload, Trash2, CheckCircle2, X, Plus, ChevronUp, ChevronDown, Eye, EyeOff } from 'lucide-react';
+import { Search, ChevronRight, Laptop, Smartphone, Watch, Tablet, Download, Upload, Trash2, CheckCircle2, X, Plus, ChevronUp, ChevronDown, Eye, EyeOff, GripVertical } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { cn } from '@/lib/utils';
 import { Brand, RepairService } from '../lib/types';
 import { motion, AnimatePresence } from 'motion/react';
 
-export function CatalogView({ brands, onCatalogUpdate }: { 
+export function CatalogView({ 
+  brands, 
+  onCatalogUpdate,
+  services: initialServices,
+  onServicesUpdate
+}: { 
   brands: Brand[], 
   onCatalogUpdate?: (data: { 
     brandName: string, 
     modelName?: string, 
     action: 'add_brand' | 'add_model' | 'remove_brand' | 'remove_model' | 'update_brand',
     updatedBrand?: Brand
-  }) => void 
+  }) => void,
+  services?: RepairService[],
+  onServicesUpdate?: (services: RepairService[], deletedId?: string) => void
 }) {
   const [selectedBrandId, setSelectedBrandId] = useState(brands[0]?.id || '');
   const selectedBrand = brands.find(b => b.id === (selectedBrandId || brands[0]?.id)) || brands[0];
@@ -24,9 +33,55 @@ export function CatalogView({ brands, onCatalogUpdate }: {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [services, setServices] = useState<RepairService[]>(() => {
+  const [servicesLocal, setServicesLocal] = useState<RepairService[]>(() => {
     return getSavedServices();
   });
+  const services = initialServices || servicesLocal;
+
+  const updateServicesList = (updated: RepairService[], deletedId?: string) => {
+    if (onServicesUpdate) {
+      onServicesUpdate(updated, deletedId);
+    } else {
+      setServicesLocal(updated);
+      localStorage.setItem('honeybill_custom_services', JSON.stringify(updated));
+    }
+  };
+
+  const [newBrandName, setNewBrandName] = useState('');
+
+  const handleAddBrand = () => {
+    if (!newBrandName.trim()) return;
+    const trimmed = newBrandName.trim();
+    const newBrand = saveCustomBrand(trimmed);
+    if (newBrand && onCatalogUpdate) {
+      onCatalogUpdate({
+        brandName: trimmed,
+        action: 'add_brand'
+      });
+    }
+    setNewBrandName('');
+    if (newBrand) {
+      setSelectedBrandId(newBrand.id);
+    }
+  };
+
+  const handleDeleteBrand = (id: string) => {
+    const brandToDelete = brands.find(b => b.id === id);
+    if (!brandToDelete) return;
+    if (confirm(`Are you sure you want to delete ${brandToDelete.name} and all its models from the catalog?`)) {
+      const updated = brands.filter(b => b.id !== id);
+      localStorage.setItem('honeybill_custom_devices', JSON.stringify(updated));
+      if (onCatalogUpdate) {
+        onCatalogUpdate({
+          brandName: brandToDelete.name,
+          action: 'remove_brand'
+        });
+      }
+      if (selectedBrandId === id) {
+        setSelectedBrandId(updated[0]?.id || '');
+      }
+    }
+  };
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [newServiceName, setNewServiceName] = useState('');
@@ -43,23 +98,20 @@ export function CatalogView({ brands, onCatalogUpdate }: {
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     [newServices[index], newServices[targetIndex]] = [newServices[targetIndex], newServices[index]];
     
-    setServices(newServices);
-    localStorage.setItem('honeybill_custom_services', JSON.stringify(newServices));
+    updateServicesList(newServices);
   };
 
   const toggleVisibility = (id: string) => {
     const updated = services.map(s => 
       s.id === id ? { ...s, hidden: !s.hidden } : s
     );
-    setServices(updated);
-    localStorage.setItem('honeybill_custom_services', JSON.stringify(updated));
+    updateServicesList(updated);
   };
 
   const deleteService = (id: string) => {
     if (confirm('Delete this service from catalog?')) {
       const updated = services.filter(s => s.id !== id);
-      setServices(updated);
-      localStorage.setItem('honeybill_custom_services', JSON.stringify(updated));
+      updateServicesList(updated, id);
       showNotification('Service removed from catalog', 'success');
     }
   };
@@ -73,8 +125,7 @@ export function CatalogView({ brands, onCatalogUpdate }: {
       basePrice: parseFloat(newServicePrice) || 0
     };
     const updated = [...services, newService];
-    setServices(updated);
-    localStorage.setItem('honeybill_custom_services', JSON.stringify(updated));
+    updateServicesList(updated);
     setShowAddModal(false);
     setNewServiceName('');
     setNewServicePrice('0');
@@ -86,8 +137,7 @@ export function CatalogView({ brands, onCatalogUpdate }: {
     const updated = services.map(s => 
       selectedServices.includes(s.id) ? { ...s, hidden: hide } : s
     );
-    setServices(updated);
-    localStorage.setItem('honeybill_custom_services', JSON.stringify(updated));
+    updateServicesList(updated);
     showNotification(`${selectedServices.length} services ${hide ? 'hidden' : 'made visible'}`, 'success');
   };
 
@@ -95,8 +145,10 @@ export function CatalogView({ brands, onCatalogUpdate }: {
     if (selectedServices.length === 0) return;
     if (confirm(`Delete ${selectedServices.length} selected services?`)) {
       const updated = services.filter(s => !selectedServices.includes(s.id));
-      setServices(updated);
-      localStorage.setItem('honeybill_custom_services', JSON.stringify(updated));
+      // Write logic to delete each one
+      selectedServices.forEach(srvId => {
+        updateServicesList(updated, srvId);
+      });
       setSelectedServices([]);
       showNotification(`${selectedServices.length} services removed`, 'success');
     }
@@ -114,6 +166,20 @@ export function CatalogView({ brands, onCatalogUpdate }: {
     setSelectedServices(prev => 
       prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
     );
+  };
+
+  const onDragEndServices = (result: DropResult) => {
+    if (!result.destination) return;
+    const items = Array.from(services);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    
+    // Explicitly update order properties
+    items.forEach((item, index) => {
+      item.order = index;
+    });
+
+    updateServicesList(items);
   };
 
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
@@ -307,8 +373,7 @@ export function CatalogView({ brands, onCatalogUpdate }: {
             return { id, name, category, basePrice, hidden };
           });
 
-        setServices(newServices);
-        localStorage.setItem('honeybill_custom_services', JSON.stringify(newServices));
+        updateServicesList(newServices);
         showNotification(`${newServices.length} services imported successfully`, 'success');
         if (fileInputRef.current) fileInputRef.current.value = '';
       } catch (err) {
@@ -321,8 +386,7 @@ export function CatalogView({ brands, onCatalogUpdate }: {
 
   const resetToDefault = () => {
     if (confirm('Are you sure you want to reset the catalog to default services? This will overwrite your changes.')) {
-      setServices(STATIC_SERVICES);
-      localStorage.removeItem('honeybill_custom_services');
+      updateServicesList(STATIC_SERVICES);
       showNotification('Catalog reset to default', 'success');
     }
   };
@@ -527,33 +591,74 @@ export function CatalogView({ brands, onCatalogUpdate }: {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {view === 'devices' ? (
           <>
-            <div className="space-y-2">
-              {brands.map((brand) => (
-                <button
-                  key={brand.id}
-                  onClick={() => setSelectedBrandId(brand.id)}
-                  className={cn(
-                    "w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all",
-                    selectedBrand.id === brand.id 
-                      ? "bg-blue-600 text-white shadow-md shadow-blue-200" 
-                      : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-100"
-                  )}
-                >
-                  <span className="flex items-center gap-3">
-                    <div className={cn(
-                      "w-8 h-8 rounded-lg flex items-center justify-center font-bold",
-                      selectedBrand.id === brand.id ? "bg-white/20" : "bg-slate-100 text-slate-400"
-                    )}>
-                      {brand.name[0]}
-                    </div>
-                    {brand.name}
-                  </span>
-                  <ChevronRight size={16} className={cn(
-                    "transition-transform",
-                    selectedBrand.id === brand.id ? "rotate-90" : "opacity-0"
-                  )} />
-                </button>
-              ))}
+            <div className="space-y-4">
+              {/* Brand Creation Box */}
+              <div className="bg-white border border-slate-100 rounded-xl p-3 space-y-2 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Add New Brand</p>
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="e.g. Google, Nothing"
+                    value={newBrandName}
+                    onChange={(e) => setNewBrandName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddBrand();
+                    }}
+                    className="h-9 text-xs rounded-lg border-slate-200"
+                  />
+                  <button 
+                    onClick={handleAddBrand}
+                    className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                    title="Add Brand"
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Brands Catalog List */}
+              <div className="space-y-2 bg-slate-50/50 p-2 rounded-xl border border-slate-100 max-h-[500px] overflow-y-auto">
+                {brands.map((brand) => (
+                  <div key={brand.id} className="group relative">
+                    <button
+                      onClick={() => setSelectedBrandId(brand.id)}
+                      className={cn(
+                        "w-full flex items-center justify-between pl-4 pr-10 py-3 rounded-xl text-sm font-medium transition-all text-left",
+                        selectedBrand.id === brand.id 
+                          ? "bg-blue-600 text-white shadow-md shadow-blue-200" 
+                          : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-100"
+                      )}
+                    >
+                      <span className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-8 h-8 rounded-lg flex items-center justify-center font-bold",
+                          selectedBrand.id === brand.id ? "bg-white/20" : "bg-slate-100 text-slate-400"
+                        )}>
+                          {brand.name[0]}
+                        </div>
+                        {brand.name}
+                      </span>
+                      <ChevronRight size={16} className={cn(
+                        "transition-transform",
+                        selectedBrand.id === brand.id ? "rotate-90" : "opacity-0"
+                      )} />
+                    </button>
+                    {/* Delete Brand Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteBrand(brand.id);
+                      }}
+                      className={cn(
+                        "absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 transition-all z-10",
+                        selectedBrand.id === brand.id ? "text-white/80 hover:text-white hover:bg-white/10" : "text-slate-400"
+                      )}
+                      title="Delete Brand"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="lg:col-span-3 space-y-6">
@@ -564,6 +669,27 @@ export function CatalogView({ brands, onCatalogUpdate }: {
                   );
 
                   if (searchTerm && filteredModels.length === 0) return null;
+
+                  const onDragEndModels = (result: DropResult) => {
+                    if (!result.destination) return;
+                    const items = Array.from(series.models);
+                    const [reorderedItem] = items.splice(result.source.index, 1);
+                    items.splice(result.destination.index, 0, reorderedItem);
+                    
+                    // Assign order explicitly
+                    items.forEach((m, idx) => m.order = idx);
+                    
+                    const brandCopy = JSON.parse(JSON.stringify(selectedBrand)) as Brand;
+                    const s = brandCopy.series.find((x) => x.id === series.id);
+                    if (s) s.models = items;
+                    if (onCatalogUpdate) {
+                      onCatalogUpdate({
+                        brandName: brandCopy.name,
+                        action: 'update_brand',
+                        updatedBrand: brandCopy
+                      });
+                    }
+                  };
 
                   return (
                     <Card key={series.id} className="rounded-xl border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -578,45 +704,63 @@ export function CatalogView({ brands, onCatalogUpdate }: {
                         </div>
                       </CardHeader>
                       <CardContent className="p-0">
-                        <div className="divide-y divide-slate-50 max-h-[300px] overflow-y-auto custom-scrollbar">
-                          {filteredModels.map((model) => (
-                            <div key={model.id} className="px-6 py-2.5 flex justify-between items-center hover:bg-slate-50/80 transition-colors group">
-                              <span className="text-xs font-bold text-slate-700">{model.name}</span>
-                              <div className="flex items-center gap-1.5">
-                                {model.releaseYear && (
-                                  <span className="text-[9px] font-extrabold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                                    {model.releaseYear}
-                                  </span>
-                                )}
-                                <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity gap-0.5">
-                                  <button
-                                    onClick={() => handleMoveModel(series.id, model.id, 'up')}
-                                    disabled={series.models.indexOf(model) === 0}
-                                    className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded disabled:opacity-20 disabled:hover:bg-transparent"
-                                    title="Move Up"
+                        <DragDropContext onDragEnd={onDragEndModels}>
+                          <Droppable droppableId={`models-list-${series.id}`} isDropDisabled={!!searchTerm}>
+                            {(provided) => (
+                              <div 
+                                className="divide-y divide-slate-50 max-h-[300px] overflow-y-auto custom-scrollbar"
+                                {...provided.droppableProps}
+                                ref={provided.innerRef}
+                              >
+                                {filteredModels.map((model, index) => (
+                                  <Draggable 
+                                    key={model.id} 
+                                    draggableId={model.id} 
+                                    index={index}
+                                    isDragDisabled={!!searchTerm}
                                   >
-                                    <ChevronUp size={14} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleMoveModel(series.id, model.id, 'down')}
-                                    disabled={series.models.indexOf(model) === series.models.length - 1}
-                                    className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded disabled:opacity-20 disabled:hover:bg-transparent"
-                                    title="Move Down"
-                                  >
-                                    <ChevronDown size={14} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleRemoveModel(series.id, model.id)}
-                                    className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded ml-1"
-                                    title="Delete Model"
-                                  >
-                                    <Trash2 size={13} />
-                                  </button>
-                                </div>
+                                    {(provided, snapshot) => (
+                                      <div 
+                                        ref={provided.innerRef}
+                                        {...provided.draggableProps}
+                                        {...provided.dragHandleProps}
+                                        style={{...provided.draggableProps.style}}
+                                        className={cn(
+                                          "px-6 py-2.5 flex justify-between items-center hover:bg-slate-50/80 transition-colors group",
+                                          snapshot.isDragging && "bg-slate-50 shadow-md border-y border-blue-200 z-50"
+                                        )}
+                                      >
+                                        <span className="text-xs font-bold text-slate-700">{model.name}</span>
+                                        <div className="flex items-center gap-1.5">
+                                          {model.releaseYear && (
+                                            <span className="text-[9px] font-extrabold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                              {model.releaseYear}
+                                            </span>
+                                          )}
+                                          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity gap-0.5">
+                                            {!searchTerm && (
+                                              <div className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded cursor-grab active:cursor-grabbing">
+                                                <GripVertical size={14} />
+                                              </div>
+                                            )}
+                                            <button
+                                              onClick={() => handleRemoveModel(series.id, model.id)}
+                                              className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded ml-1"
+                                              title="Delete Model"
+                                            >
+                                              <Trash2 size={13} />
+                                            </button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </Draggable>
+                                ))}
+                                {provided.placeholder}
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            )}
+                          </Droppable>
+                        </DragDropContext>
                         {/* Inline Quick Add Model Form */}
                         <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex items-center gap-2">
                           <input
@@ -674,77 +818,95 @@ export function CatalogView({ brands, onCatalogUpdate }: {
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50">
-                      {services
-                        .filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.category.toLowerCase().includes(searchTerm.toLowerCase()))
-                        .map((service) => (
-                        <tr key={service.id} className={cn(
-                          "hover:bg-slate-50 transition-colors group",
-                          selectedServices.includes(service.id) && "bg-blue-50/50"
-                        )}>
-                          <td className="px-6 py-4 text-center">
-                            <input 
-                              type="checkbox" 
-                              className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                              checked={selectedServices.includes(service.id)}
-                              onChange={() => toggleSelectService(service.id)}
-                            />
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="text-sm font-bold text-slate-800">{service.name}</span>
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <span className={cn(
-                              "text-[10px] font-black uppercase px-2 py-1 rounded",
-                              service.category === 'hardware' ? "bg-amber-50 text-amber-600" :
-                              service.category === 'software' ? "bg-blue-50 text-blue-600" :
-                              service.category === 'accessory' ? "bg-purple-50 text-purple-600" : "bg-slate-100 text-slate-600"
-                            )}>
-                              {service.category}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <button
-                              onClick={() => toggleVisibility(service.id)}
-                              className={cn(
-                                "p-1.5 rounded-lg transition-all",
-                                service.hidden ? "text-slate-300 hover:text-slate-500" : "text-blue-500 hover:text-blue-700 bg-blue-50"
-                              )}
-                              title={service.hidden ? "Hidden from Creator" : "Visible in Creator"}
-                            >
-                              {service.hidden ? <EyeOff size={16} /> : <Eye size={16} />}
-                            </button>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <span className="text-sm font-black text-slate-900">${service.basePrice.toFixed(2)}</span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <button 
-                                onClick={() => moveService(service.id, 'up')}
-                                disabled={services.indexOf(service) === 0}
-                                className="p-1.5 text-slate-300 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent"
-                              >
-                                <ChevronUp size={16} />
-                              </button>
-                              <button 
-                                onClick={() => moveService(service.id, 'down')}
-                                disabled={services.indexOf(service) === services.length - 1}
-                                className="p-1.5 text-slate-300 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent"
-                              >
-                                <ChevronDown size={16} />
-                              </button>
-                              <button 
-                                onClick={() => deleteService(service.id)}
-                                className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100 ml-2"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
+                    <DragDropContext onDragEnd={onDragEndServices}>
+                      <Droppable droppableId="services-list" isDropDisabled={!!searchTerm}>
+                        {(provided) => (
+                          <tbody 
+                            className="divide-y divide-slate-50"
+                            {...provided.droppableProps}
+                            ref={provided.innerRef}
+                          >
+                            {services
+                              .filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.category.toLowerCase().includes(searchTerm.toLowerCase()))
+                              .map((service, idx) => (
+                                <Draggable 
+                                  key={service.id} 
+                                  draggableId={service.id} 
+                                  index={services.findIndex(s => s.id === service.id)}
+                                  isDragDisabled={!!searchTerm}
+                                >
+                                  {(provided, snapshot) => (
+                                    <tr 
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      {...provided.dragHandleProps}
+                                      style={{...provided.draggableProps.style}}
+                                      className={cn(
+                                        "hover:bg-slate-50 transition-colors group",
+                                        selectedServices.includes(service.id) && "bg-blue-50/50",
+                                        snapshot.isDragging && "bg-slate-50 shadow-lg border-y border-blue-200"
+                                      )}
+                                    >
+                                      <td className="px-6 py-4 text-center">
+                                        <input 
+                                          type="checkbox" 
+                                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                          checked={selectedServices.includes(service.id)}
+                                          onChange={() => toggleSelectService(service.id)}
+                                        />
+                                      </td>
+                                      <td className="px-6 py-4">
+                                        <span className="text-sm font-bold text-slate-800">{service.name}</span>
+                                      </td>
+                                      <td className="px-6 py-4 text-center">
+                                        <span className={cn(
+                                          "text-[10px] font-black uppercase px-2 py-1 rounded",
+                                          service.category === 'hardware' ? "bg-amber-50 text-amber-600" :
+                                          service.category === 'software' ? "bg-blue-50 text-blue-600" :
+                                          service.category === 'accessory' ? "bg-purple-50 text-purple-600" : "bg-slate-100 text-slate-600"
+                                        )}>
+                                          {service.category}
+                                        </span>
+                                      </td>
+                                      <td className="px-6 py-4 text-center">
+                                        <button
+                                          onClick={() => toggleVisibility(service.id)}
+                                          className={cn(
+                                            "p-1.5 rounded-lg transition-all",
+                                            service.hidden ? "text-slate-300 hover:text-slate-500" : "text-blue-500 hover:text-blue-700 bg-blue-50"
+                                          )}
+                                          title={service.hidden ? "Hidden from Creator" : "Visible in Creator"}
+                                        >
+                                          {service.hidden ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
+                                      </td>
+                                      <td className="px-6 py-4 text-right">
+                                        <span className="text-sm font-black text-slate-900">${service.basePrice.toFixed(2)}</span>
+                                      </td>
+                                      <td className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-1">
+                                          {!searchTerm && (
+                                            <div className="p-1.5 text-slate-300 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all cursor-grab active:cursor-grabbing mr-1">
+                                              <GripVertical size={16} />
+                                            </div>
+                                          )}
+                                          <button 
+                                            onClick={() => deleteService(service.id)}
+                                            className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100 ml-2"
+                                          >
+                                            <Trash2 size={16} />
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </Draggable>
+                              ))}
+                            {provided.placeholder}
+                          </tbody>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
                   </table>
                 </div>
                 {services.length === 0 && (

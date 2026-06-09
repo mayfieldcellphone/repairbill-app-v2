@@ -35,7 +35,7 @@ export const MOCK_LEADS: Lead[] = [
   {
     id: 'l3',
     customerName: 'Voice Mail',
-    customerEmail: 'noreply@charla.com',
+    customerEmail: 'noreply@incoming-leads.com',
     message: 'Left a voice message regarding a Mac repair.',
     type: 'voice_message',
     status: 'new',

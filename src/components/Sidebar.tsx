@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   PieChart,
@@ -21,10 +22,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { subscribeToDocuments } from '../lib/firestore';
+import { AppUser } from '../lib/types';
 
 const navItems = [
   { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
-  { id: 'inbox', icon: <Mail size={20} />, label: 'Inbox' },
   { id: 'invoices', icon: <CreditCard size={20} />, label: 'Invoices' },
   { id: 'estimates', icon: <FileText size={20} />, label: 'Estimates' },
   { id: 'expenses', icon: <TrendingDown size={20} />, label: 'Expenses' },
@@ -44,6 +46,20 @@ export function Sidebar({ activeTab, setActiveTab, settings }: {
   const { user, profile, logout } = useAuth();
   const theme = settings?.appTheme || 'modern';
   const isAdmin = profile?.role === 'admin';
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    try {
+      const unsubscribe = subscribeToDocuments<AppUser>('users', (data) => {
+        const pending = data.filter(u => u.status === 'pending');
+        setPendingCount(pending.length);
+      });
+      return unsubscribe;
+    } catch (err) {
+      console.warn('[Sidebar] Error fetching pending users:', err);
+    }
+  }, [isAdmin]);
 
   return (
     <aside className={cn(
@@ -135,6 +151,11 @@ export function Sidebar({ activeTab, setActiveTab, settings }: {
               <Shield size={20} />
             </span>
             <span className="hidden md:block truncate">User Access</span>
+            {pendingCount > 0 && (
+              <span className="hidden md:inline-flex items-center justify-center ml-auto bg-amber-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full min-w-5 h-5 select-none animate-pulse">
+                {pendingCount}
+              </span>
+            )}
           </button>
         )}
       </nav>

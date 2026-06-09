@@ -29,14 +29,16 @@ import {
   Building2,
   Search,
   Calendar,
-  Sparkles
+  Sparkles,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { InvoiceTemplate } from './InvoiceTemplate';
 import { generatePDF, printInvoice, shareInvoice } from '../lib/invoiceUtils';
 
-export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onClose, nextInvoiceNumber, initialType = 'invoice', brands: initialBrands, onCatalogUpdate }: { 
+export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onClose, nextInvoiceNumber, initialType = 'invoice', brands: initialBrands, onCatalogUpdate, services: initialServices, onServicesUpdate }: { 
   settings: InvoiceSettings,
   onInvoiceCreated: (invoice: Invoice) => void,
   invoiceToEdit?: Invoice | null,
@@ -44,7 +46,9 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
   nextInvoiceNumber?: number,
   initialType?: 'invoice' | 'estimate',
   brands?: Brand[],
-  onCatalogUpdate?: (data: { brandName: string, modelName?: string, action: 'add_brand' | 'add_model' | 'remove_brand' | 'remove_model' }) => void
+  onCatalogUpdate?: (data: { brandName: string, modelName?: string, action: 'add_brand' | 'add_model' | 'remove_brand' | 'remove_model' }) => void,
+  services?: RepairService[],
+  onServicesUpdate?: (services: RepairService[], deletedId?: string) => void
 }) {
   const theme = settings.appTheme;
   const [step, setStep] = useState(1);
@@ -107,9 +111,18 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
     }
   }, [invoiceToEdit]);
 
-  const [services, setServices] = useState<RepairService[]>(() => {
+  const [servicesLocal, setServicesLocal] = useState<RepairService[]>(() => {
     return getSavedServices();
   });
+  const services = initialServices || servicesLocal;
+  const handleUpdateServices = (updated: RepairService[], deletedId?: string) => {
+    if (onServicesUpdate) {
+      onServicesUpdate(updated, deletedId);
+    } else {
+      setServicesLocal(updated);
+      localStorage.setItem('honeybill_custom_services', JSON.stringify(updated));
+    }
+  };
 
   const [serviceMode, setServiceMode] = useState<'repair' | 'sale'>('repair');
   const [showAllServices, setShowAllServices] = useState(false);
@@ -117,24 +130,58 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
   const COMMON_REPAIR_SERVICE_NAMES = [
     "Screen Replacement (OEM)",
     "Screen Replacement (Aftermarket)",
-    "LCD Repair",
     "Battery Replacement",
-    "Charging Port Repair",
     "Charging Port Replacement",
     "Back Glass Replacement",
-    "Diagnostic Fee",
-    "Free Diagnostic (waived on repair)",
-    "Advanced Diagnostic",
-    "Camera Lens Cover Replacement",
-    "Front Camera Replacement",
-    "Rear Camera Replacement",
-    "Back Housing Replacement",
-    "Water Damage Diagnostic",
-    "Water Damage Treatment",
-    "Software Restore / Update",
-    "Factory Reset & Setup",
-    "Data Backup & Transfer"
+    "Camera Replacement"
   ];
+
+  const [invoiceMultiSelectedServices, setInvoiceMultiSelectedServices] = useState<RepairService[]>([]);
+
+  const handleToggleInvoiceMultiSelect = (e: React.MouseEvent, service: RepairService) => {
+    e.stopPropagation();
+    setInvoiceMultiSelectedServices(prev => {
+      const isSelected = prev.find(s => s.id === service.id);
+      if (isSelected) return prev.filter(s => s.id !== service.id);
+      return [...prev, service];
+    });
+  };
+
+  const handleAddMultipleServices = () => {
+    if (invoiceMultiSelectedServices.length === 0) return;
+    
+    // Add all of them with default or saved prices
+    let currentItems = [...invoiceItems];
+    const newPrices = { ...savedPrices };
+    
+    invoiceMultiSelectedServices.forEach(srv => {
+      const initialPrice = savedPrices[srv.id] || srv.basePrice || 0;
+      const newItem: InvoiceItem = {
+        id: Math.random().toString(36).substr(2, 9),
+        serviceId: srv.id,
+        brandName: selectedBrand?.name || 'Unknown',
+        modelName: selectedModel?.name || 'Unknown',
+        serviceName: srv.name,
+        price: initialPrice,
+        quantity: 1,
+      };
+      currentItems.push(newItem);
+      newPrices[srv.id] = initialPrice;
+    });
+    
+    pushToHistory(currentItems);
+    setSavedPrices(newPrices);
+    localStorage.setItem('honeybill_service_prices', JSON.stringify(newPrices));
+    setInvoiceMultiSelectedServices([]);
+  };
+
+  const toggleVisibilityDashboard = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const updated = services.map(s => 
+      s.id === id ? { ...s, hidden: !s.hidden } : s
+    );
+    handleUpdateServices(updated);
+  };
 
   const getFilteredServicesList = () => {
     return services.filter(s => {
@@ -143,24 +190,27 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
         return false;
       }
       
-      // 2. Matches Search Query (bypass other filters so user can always find it)
+      // 2. Matches Search Query
       if (serviceSearchQuery) {
         return s.name.toLowerCase().includes(serviceSearchQuery.toLowerCase());
       }
       
       // 3. Matches Service Mode (Sale vs Repair)
       if (serviceMode === 'sale') {
-        return ["Used iPhone", "Used Samsung", "Used Android", "Used iPad", "Used Laptop"].includes(s.name);
+        if (!["Used iPhone", "Used Samsung", "Used Android", "Used iPad", "Used Laptop"].includes(s.name)) return false;
       } else {
-        // Under repair mode, do not show 'Used' services
-        if (["Used iPhone", "Used Samsung", "Used Android", "Used iPad", "Used Laptop"].includes(s.name)) {
-          return false;
-        }
-        // Filter to common services if showAllServices is false
-        if (!showAllServices) {
-          return COMMON_REPAIR_SERVICE_NAMES.includes(s.name);
-        }
+        if (["Used iPhone", "Used Samsung", "Used Android", "Used iPad", "Used Laptop"].includes(s.name)) return false;
       }
+
+      // If they don't want to show ALL services, hide the non-common ones and the hidden ones
+      if (!showAllServices) {
+        if (s.hidden) return false;
+        // Optionally filter dynamically by COMMON if desired, but user just wants visibility toggles.
+        // If we strictly filter by common, custom ones disappear unless they click show all.
+      } else {
+        // If showAllServices is true, we show even hidden ones so they can be toggled!
+      }
+
       return true;
     });
   };
@@ -195,8 +245,7 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
   const handleDeleteService = (e: React.MouseEvent, serviceId: string) => {
     e.stopPropagation();
     const updatedServices = services.filter(s => s.id !== serviceId);
-    setServices(updatedServices);
-    localStorage.setItem('honeybill_custom_services', JSON.stringify(updatedServices));
+    handleUpdateServices(updatedServices, serviceId);
   };
 
   const handleAddService = () => {
@@ -210,11 +259,13 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
     };
 
     const updatedServices = [...services, newService];
-    setServices(updatedServices);
-    localStorage.setItem('honeybill_custom_services', JSON.stringify(updatedServices));
+    handleUpdateServices(updatedServices);
     
     setNewServiceName('');
     setShowAddService(false);
+    
+    // Select the newly created service immediately
+    handleSelectItem(newService);
   };
 
   const handleAddCustomBrand = () => {
@@ -240,6 +291,15 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
     // Default to 'general' series if none selected, or the selected one
     const seriesId = selectedSeries?.id || 'general';
     
+    // helper to prepare service price if there's a pending service
+    const triggerPriceModal = () => {
+      if (pendingService) {
+        setServiceToPrice(pendingService);
+        const initialPrice = savedPrices[pendingService.id] || pendingService.basePrice || 0;
+        setPriceInput(initialPrice > 0 ? initialPrice.toString() : '');
+      }
+    };
+
     if (onCatalogUpdate) {
       onCatalogUpdate({ brandName: selectedBrand.name, modelName: newModelName.trim(), action: 'add_model' });
       const newModelId = newModelName.toLowerCase().replace(/[^a-z0-9]/g, '-');
@@ -247,6 +307,7 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
       setSelectedModel(newModel);
       setSelectedSeries(selectedSeries || { id: 'general', name: 'General', models: [newModel] });
       setStep(2);
+      triggerPriceModal();
     } else {
       saveCustomModel(selectedBrand.id, seriesId, newModelName);
       
@@ -266,6 +327,7 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
             setSelectedModel(newModel);
             setSelectedSeries(updatedSeries);
             setStep(2);
+            triggerPriceModal();
           }
         }
       }
@@ -318,7 +380,14 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
   const [searchTerm, setSearchTerm] = useState('');
   const [allCustomers, setAllCustomers] = useState<Customer[]>(() => {
     const saved = localStorage.getItem('honeybill_customers');
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse honeybill_customers', e);
+      }
+    }
+    return [];
   });
   
   // Editing state
@@ -332,15 +401,28 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
   const [quantityInput, setQuantityInput] = useState<string>('1');
   const [savedPrices, setSavedPrices] = useState<Record<string, number>>(() => {
     const saved = localStorage.getItem('honeybill_service_prices');
-    return saved ? JSON.parse(saved) : {};
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse honeybill_service_prices', e);
+      }
+    }
+    return {};
   });
   const [pendingService, setPendingService] = useState<RepairService | null>(null);
 
   const handleSelectItem = (service: RepairService) => {
+    if (selectedModel) {
+      setServiceToPrice(service);
+      const initialPrice = savedPrices[service.id] || service.basePrice || 0;
+      setPriceInput(initialPrice > 0 ? initialPrice.toString() : '');
+      setQuantityInput('1');
+      return;
+    }
+    
     if (settings.creationFlowOrder === 'service-first') {
       setPendingService(service);
-      setStep(1); // Keep it simple, or adjust step logic
-      // In service-first, if we are in "Step 1 (Services)", we go to "Step 2 (Device)"
       if (step === 1) setStep(2);
     } else {
       setServiceToPrice(service);
@@ -1403,22 +1485,82 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
                     )}
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {getFilteredServicesList().map(service => (
-                        <button 
-                          type="button"
-                          key={service.id}
-                          onClick={() => handleSelectItem(service)}
-                          className="group p-5 bg-card hover:bg-primary/5 border border-border hover:border-primary/40 rounded-2xl transition-all text-left flex justify-between items-center"
-                        >
-                          <div>
-                            <h4 className="font-bold text-foreground group-hover:text-primary transition-colors">{service.name}</h4>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-1">{service.category}</p>
+                      {getFilteredServicesList().map(service => {
+                        const isMultiSelected = invoiceMultiSelectedServices.some(s => s.id === service.id);
+                        return (
+                          <div
+                            key={service.id}
+                            className={cn(
+                              "group p-5 border rounded-2xl transition-all text-left flex justify-between items-center relative",
+                              isMultiSelected 
+                                ? "bg-primary/5 border-primary/40" 
+                                : "bg-card border-border hover:border-primary/40 hover:bg-primary/5",
+                              service.hidden && "opacity-50 grayscale hover:opacity-100 hover:grayscale-0"
+                            )}
+                          >
+                            <button
+                              type="button"
+                              className="absolute inset-0 w-full h-full text-left"
+                              onClick={() => {
+                                if (invoiceMultiSelectedServices.length > 0) {
+                                  // toggle this instead of adding immediately if in multi mode
+                                  setInvoiceMultiSelectedServices(prev => {
+                                    const exists = prev.find(s => s.id === service.id);
+                                    if (exists) return prev.filter(s => s.id !== service.id);
+                                    return [...prev, service];
+                                  });
+                                } else {
+                                  handleSelectItem(service);
+                                }
+                              }}
+                            />
+                            
+                            <div className="relative z-10 flex items-center gap-3 pointer-events-none">
+                              <input 
+                                type="checkbox"
+                                checked={isMultiSelected}
+                                onChange={() => {}} // handled by div click
+                                className="pointer-events-auto rounded border-slate-300 text-primary focus:ring-primary h-5 w-5"
+                                onClick={(e) => handleToggleInvoiceMultiSelect(e, service)}
+                              />
+                              <div>
+                                <h4 className={cn("font-bold transition-colors", isMultiSelected ? "text-primary" : "text-foreground group-hover:text-primary")}>
+                                  {service.name}
+                                </h4>
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-1">
+                                  {service.category} {service.hidden && "(Hidden)"}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="relative z-10 flex items-center gap-2">
+                              {showAllServices && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => toggleVisibilityDashboard(e, service.id)}
+                                  className={cn(
+                                    "p-1.5 rounded-lg transition-all",
+                                    service.hidden ? "text-slate-400 hover:text-slate-600 hover:bg-slate-100" : "text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                                  )}
+                                  title={service.hidden ? "Hidden from Creator. Click to show." : "Visible in Creator. Click to hide."}
+                                >
+                                  {service.hidden ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                              )}
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSelectItem(service);
+                                }}
+                                className="w-8 h-8 rounded-full bg-muted group-hover:bg-primary/10 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-all"
+                              >
+                                <Plus size={18} />
+                              </button>
+                            </div>
                           </div>
-                          <div className="w-8 h-8 rounded-full bg-muted group-hover:bg-primary/10 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-all">
-                            <Plus size={18} />
-                          </div>
-                        </button>
-                      ))}
+                        );
+                      })}
+                      
                       {serviceMode === 'repair' && (
                         <button 
                           type="button"
@@ -1435,6 +1577,26 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
                         </button>
                       )}
                     </div>
+
+                    <AnimatePresence>
+                      {invoiceMultiSelectedServices.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          className="mt-6 flex justify-end"
+                        >
+                          <button
+                            type="button"
+                            onClick={handleAddMultipleServices}
+                            className="bg-primary text-primary-foreground px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all"
+                          >
+                            <Plus size={18} />
+                            Add Selected Services ({invoiceMultiSelectedServices.length})
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
                 )}
                 {step === 2 && (

@@ -13,12 +13,44 @@ export const generatePDF = async (elementId: string, filename: string) => {
       throw new Error(`Element with id ${elementId} not found`);
     }
 
-    const canvas = await html2canvas(element, {
+    // Create a temporary stable offscreen container to layout the invoice perfectly
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.width = '800px';
+    container.style.backgroundColor = '#ffffff';
+    container.style.zIndex = '-100000';
+    container.style.pointerEvents = 'none';
+
+    // Clone the target element
+    const clonedElement = element.cloneNode(true) as HTMLElement;
+    clonedElement.style.width = '800px';
+    clonedElement.style.maxWidth = '800px';
+    clonedElement.style.padding = '32px';
+    clonedElement.style.margin = '0';
+    clonedElement.style.boxShadow = 'none';
+    clonedElement.style.border = 'none';
+    clonedElement.style.transform = 'none';
+    clonedElement.style.transition = 'none';
+
+    container.appendChild(clonedElement);
+    document.body.appendChild(container);
+
+    // Wait for the clone to layout fully
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const canvas = await html2canvas(clonedElement, {
       scale: 2,
       useCORS: true,
       logging: false,
-      backgroundColor: '#ffffff'
+      backgroundColor: '#ffffff',
+      windowWidth: 800,
+      windowHeight: clonedElement.scrollHeight || 1200
     });
+
+    // Remove the temporary container
+    document.body.removeChild(container);
 
     const imgData = canvas.toDataURL('image/png');
     
@@ -58,7 +90,8 @@ export const printInvoice = (elementId: string) => {
   iframe.style.border = '0';
   document.body.appendChild(iframe);
 
-  const content = element.innerHTML;
+  // Use outerHTML so we copy the container with classes and id!
+  const content = element.outerHTML;
   const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
     .map(s => s.outerHTML)
     .join('');
@@ -76,19 +109,55 @@ export const printInvoice = (elementId: string) => {
         <title>Print Invoice</title>
         ${styles}
         <style>
-          body { background: white !important; -webkit-print-color-adjust: exact; margin: 0; }
+          @page {
+            size: auto;
+            margin: 15mm 15mm 15mm 15mm;
+          }
+          body { 
+            background: #ffffff !important; 
+            color: #0f172a !important;
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important;
+            margin: 0; 
+            padding: 0;
+            font-family: ui-sans-serif, system-ui, sans-serif;
+          }
           .no-print { display: none !important; }
+          
+          /* Force standard color print and layout rules */
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            box-sizing: border-box;
+          }
+          
+          /* Prevent row splitting across pages */
+          tr, .grid > div, .space-y-4 > div {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          
+          /* Keep elements full-width and remove visual noises */
+          [id^="printable-invoice-"], [id^="ai-printable-"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: transparent !important;
+          }
         </style>
       </head>
       <body>
-        <div class="p-8">
+        <div style="width: 100%;">
           ${content}
         </div>
         <script>
           setTimeout(() => {
             window.focus();
             window.print();
-          }, 500);
+          }, 600);
         </script>
       </body>
     </html>
@@ -97,7 +166,7 @@ export const printInvoice = (elementId: string) => {
 
   setTimeout(() => {
     document.body.removeChild(iframe);
-  }, 3000); // 3 seconds is usually enough for the print dialog to pop up
+  }, 5000);
 };
 
 export const shareInvoice = async (invoice: Invoice, settings: InvoiceSettings) => {

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@radix-ui/react-label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Palette, Type, Building2, Save, CreditCard, FileText, Check, Smartphone, Plus, Trash2, LayoutDashboard, Code, Copy, Zap, GripVertical, TrendingUp } from 'lucide-react';
+import { Eye, Palette, Type, Building2, Save, CreditCard, FileText, Check, Smartphone, Plus, Trash2, LayoutDashboard, Code, Copy, Zap, GripVertical, TrendingUp, Cpu } from 'lucide-react';
 import { InvoiceSettings, Brand, ProductSeries, ProductModel, RepairService } from '../lib/types';
 import { getBrandCatalog, saveCustomBrand, saveCustomModel, saveBrandOrder } from '../lib/deviceStore';
 import { REPAIR_SERVICES, getSavedServices } from '../lib/serviceData';
@@ -18,9 +18,15 @@ interface SettingsViewProps {
   settings: InvoiceSettings;
   setSettings: (settings: InvoiceSettings) => void;
   onBrandsReordered?: (brands: Brand[]) => void;
+  onCatalogUpdate?: (data: { 
+    brandName: string, 
+    modelName?: string, 
+    action: 'add_brand' | 'add_model' | 'remove_brand' | 'remove_model' | 'update_brand',
+    updatedBrand?: Brand 
+  }) => void;
 }
 
-export function SettingsView({ settings, setSettings, onBrandsReordered }: SettingsViewProps) {
+export function SettingsView({ settings, setSettings, onBrandsReordered, onCatalogUpdate }: SettingsViewProps) {
   const { user, profile } = useAuth();
   const [localSettings, setLocalSettings] = useState<InvoiceSettings>(settings);
   const [isSaving, setIsSaving] = useState(false);
@@ -160,6 +166,7 @@ export function SettingsView({ settings, setSettings, onBrandsReordered }: Setti
                   { id: 'dashboard', icon: TrendingUp, label: 'Dashboard' },
                   { id: 'financial', icon: CreditCard, label: 'Finance' },
                   { id: 'integration', icon: Zap, label: 'Website' },
+                  { id: 'ai-voice', icon: Cpu, label: 'AI Voice' },
                 ].map((tab) => (
                   <TabsTrigger 
                     key={tab.id}
@@ -458,7 +465,7 @@ export function SettingsView({ settings, setSettings, onBrandsReordered }: Setti
             </TabsContent>
 
             <TabsContent value="catalog" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2">
-              <CatalogManager settings={localSettings} onBrandsReordered={onBrandsReordered} />
+              <CatalogManager settings={localSettings} onBrandsReordered={onBrandsReordered} onCatalogUpdate={onCatalogUpdate} />
             </TabsContent>
 
             <TabsContent value="dashboard" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2">
@@ -683,31 +690,139 @@ fetch("${window.location.origin}/api/web-integration/leads", {
                 </div>
               </div>
 
-              {/* Charla Integration Support */}
+              {/* Website Lead Widget Integration */}
               <div className="bg-card rounded-2xl p-6 text-card-foreground space-y-6 border border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600">
                     <Zap size={20} />
                   </div>
                   <div>
-                    <h3 className="font-black text-sm uppercase tracking-widest">Legacy iBox Connection</h3>
-                    <p className="text-[10px] text-muted-foreground font-bold uppercase">External widget & third-party chat sync</p>
+                    <h3 className="font-black text-sm uppercase tracking-widest">Live Widget Connection</h3>
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase">External widget & third-party lead sync</p>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Charla / iBox API Key</Label>
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Lead / Sync API Key</Label>
                     <Input 
                       type="password"
-                      placeholder="ch_live_..."
+                      placeholder="sync_live_..."
                       value={localSettings.charlaApiKey || ''}
                       onChange={(e) => setLocalSettings({ ...localSettings, charlaApiKey: e.target.value })}
                       className="rounded-xl h-11 bg-background border-border"
                     />
                     <p className="text-[10px] text-muted-foreground font-medium italic">
-                      If you use Charla.com or similar iBox widgets, enter the API key here to sync leads automatically.
+                      If you use an external lead ingestion widget or custom live forms, enter the API key here to sync leads automatically.
                     </p>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="ai-voice" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+              <div className="bg-card rounded-2xl p-6 text-card-foreground space-y-6 border border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950/40 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                    <Cpu size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-sm uppercase tracking-widest text-card-foreground">AI Intelligence & Voice</h3>
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase">Configure language models for automated intake & repair summaries</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Select AI Provider</Label>
+                    <div className="flex bg-muted/60 p-1.5 rounded-2xl border border-border/40">
+                      <button
+                        type="button"
+                        onClick={() => setLocalSettings({ ...localSettings, aiProvider: 'gemini' })}
+                        className={cn(
+                          "flex-1 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2",
+                          (!localSettings.aiProvider || localSettings.aiProvider === 'gemini')
+                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/10"
+                            : "text-muted-foreground hover:bg-card/50 hover:text-foreground"
+                        )}
+                      >
+                        Google Gemini
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLocalSettings({ ...localSettings, aiProvider: 'openai' })}
+                        className={cn(
+                          "flex-1 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2",
+                          (localSettings.aiProvider === 'openai')
+                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/10"
+                            : "text-muted-foreground hover:bg-card/50 hover:text-foreground"
+                        )}
+                      >
+                        OpenAI
+                      </button>
+                    </div>
+                  </div>
+
+                  {(!localSettings.aiProvider || localSettings.aiProvider === 'gemini') ? (
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                      <div className="space-y-2">
+                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Custom Gemini API Key</Label>
+                        <Input
+                          type="password"
+                          placeholder="AIzaSy..."
+                          value={localSettings.geminiApiKey || ''}
+                          onChange={(e) => setLocalSettings({ ...localSettings, geminiApiKey: e.target.value })}
+                          className="rounded-xl h-11 bg-background border-border"
+                        />
+                        <p className="text-[10px] text-muted-foreground font-medium italic">
+                          If omitted, the default system Gemini API endpoint will be leveraged.
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Gemini Model Name</Label>
+                        <Input
+                          type="text"
+                          placeholder="gemini-3.5-flash"
+                          value={localSettings.geminiModel || 'gemini-3.5-flash'}
+                          onChange={(e) => setLocalSettings({ ...localSettings, geminiModel: e.target.value })}
+                          className="rounded-xl h-11 bg-background border-border"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                      <div className="space-y-2">
+                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">OpenAI API Key</Label>
+                        <Input
+                          type="password"
+                          placeholder="sk-..."
+                          value={localSettings.openaiApiKey || ''}
+                          onChange={(e) => setLocalSettings({ ...localSettings, openaiApiKey: e.target.value })}
+                          className="rounded-xl h-11 bg-background border-border"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Custom Endpoint / Proxy URL (Optional)</Label>
+                        <Input
+                          type="text"
+                          placeholder="e.g. https://openrouter.ai/api/v1"
+                          value={localSettings.openaiEndpoint || ''}
+                          onChange={(e) => setLocalSettings({ ...localSettings, openaiEndpoint: e.target.value })}
+                          className="rounded-xl h-11 bg-background border-border"
+                        />
+                        <p className="text-[10px] text-muted-foreground font-medium italic">
+                          Configure a custom base path if utilizing OpenRouter, DeepSeek proxies, or an internal enterprise bridge.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
+                     <p className="text-xs text-primary leading-relaxed font-semibold">
+                       <strong>Intake Co-pilot:</strong> This model setup empowers your technician to automatically scan phone model configurations, extract customer transcripts, and auto-recommend screen vs. battery repair quotes!
+                     </p>
                   </div>
                 </div>
               </div>
@@ -1048,9 +1163,15 @@ function DashboardManager({ settings, setSettings }: DashboardManagerProps) {
 interface CatalogManagerProps {
   settings: InvoiceSettings;
   onBrandsReordered?: (brands: Brand[]) => void;
+  onCatalogUpdate?: (data: { 
+    brandName: string, 
+    modelName?: string, 
+    action: 'add_brand' | 'add_model' | 'remove_brand' | 'remove_model' | 'update_brand',
+    updatedBrand?: Brand 
+  }) => void;
 }
 
-function CatalogManager({ settings, onBrandsReordered }: CatalogManagerProps) {
+function CatalogManager({ settings, onBrandsReordered, onCatalogUpdate }: CatalogManagerProps) {
   const [brands, setBrands] = useState<Brand[]>(() => getBrandCatalog());
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
   const [newBrandName, setNewBrandName] = useState('');
@@ -1078,23 +1199,47 @@ function CatalogManager({ settings, onBrandsReordered }: CatalogManagerProps) {
 
   const handleAddBrand = () => {
     if (!newBrandName.trim()) return;
-    saveCustomBrand(newBrandName.trim());
+    const trimmed = newBrandName.trim();
+    const newBrand = saveCustomBrand(trimmed);
     setBrands(getBrandCatalog());
+    if (onCatalogUpdate && newBrand) {
+      onCatalogUpdate({
+        brandName: trimmed,
+        action: 'add_brand'
+      });
+    }
     setNewBrandName('');
   };
 
   const handleAddModel = (seriesId: string) => {
     if (!selectedBrand || !newModelName.trim()) return;
-    saveCustomModel(selectedBrand.id, seriesId, newModelName.trim());
-    setBrands(getBrandCatalog());
+    const trimmedModel = newModelName.trim();
+    saveCustomModel(selectedBrand.id, seriesId, trimmedModel);
+    const updatedBrands = getBrandCatalog();
+    setBrands(updatedBrands);
+    const updatedBrand = updatedBrands.find(b => b.id === selectedBrand.id);
+    if (onCatalogUpdate && updatedBrand) {
+      onCatalogUpdate({
+        brandName: updatedBrand.name,
+        modelName: trimmedModel,
+        action: 'add_model',
+        updatedBrand
+      });
+    }
     setNewModelName('');
   };
 
   const handleDeleteBrand = (id: string) => {
-    // For now, let's just filter out and save
+    const brandToDelete = brands.find(b => b.id === id);
     const updated = brands.filter(b => b.id !== id);
     localStorage.setItem('honeybill_custom_devices', JSON.stringify(updated));
     setBrands(updated);
+    if (onCatalogUpdate && brandToDelete) {
+      onCatalogUpdate({
+        brandName: brandToDelete.name,
+        action: 'remove_brand'
+      });
+    }
     if (selectedBrand?.id === id) setSelectedBrand(null);
   };
 

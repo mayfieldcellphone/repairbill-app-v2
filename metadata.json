@@ -2,5 +2,7 @@
   "name": "RepairBill ERP",
   "description": "Professional repair management & cloud invoicing studio featuring real-time device catalog, financial analytics, and AI-powered business intelligence.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

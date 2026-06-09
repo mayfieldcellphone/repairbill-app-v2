@@ -135,7 +135,10 @@ export function AIAgentLandingView({ onBack, onSignUp }: AIAgentLandingViewProps
         >
           <ArrowLeft size={16} /> Back to Home
         </button>
-        <div className="flex items-center gap-2">
+        <div 
+          onClick={onBack}
+          className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+        >
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <Sparkles className="text-white" size={16} />
           </div>

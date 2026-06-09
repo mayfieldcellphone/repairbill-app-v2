@@ -82,6 +82,12 @@ service cloud.firestore {
         allow write: if isOwner(userId) && isActive() && isValidId(expenseId);
       }
       
+      match /services/{serviceId} {
+        allow get: if isOwner(userId) && isActive() && isValidId(serviceId);
+        allow list: if isOwner(userId) && isActive();
+        allow write: if isOwner(userId) && isActive() && isValidId(serviceId);
+      }
+
       match /brands/{brandId} {
         allow get: if isOwner(userId) && isActive() && isValidId(brandId);
         allow list: if isOwner(userId) && isActive();

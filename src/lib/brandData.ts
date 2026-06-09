@@ -40,10 +40,12 @@ const DEVICES_RAW: Record<string, { models: string[] }> = {
     "Galaxy S10+", "Galaxy S10", "Galaxy S10e", "Galaxy S9+", "Galaxy S9", "Galaxy S8+", "Galaxy S8"
   ] },
   "Samsung Galaxy A": { models: [
-    "Galaxy A56", "Galaxy A55", "Galaxy A54", "Galaxy A53 5G", "Galaxy A52s 5G", "Galaxy A52 5G", "Galaxy A51",
-    "Galaxy A36", "Galaxy A35", "Galaxy A34", "Galaxy A33 5G", "Galaxy A32", 
-    "Galaxy A26", "Galaxy A25", "Galaxy A24", "Galaxy A23", "Galaxy A16", "Galaxy A15", "Galaxy A14", "Galaxy A13", "Galaxy A12",
-    "Galaxy A73 5G", "Galaxy A72", "Galaxy A71"
+    "Galaxy A56", "Galaxy A55 5G", "Galaxy A55", "Galaxy A54 5G", "Galaxy A54", "Galaxy A53 5G", "Galaxy A52s 5G", "Galaxy A52 5G", "Galaxy A52 4G", "Galaxy A51 5G", "Galaxy A51",
+    "Galaxy A36", "Galaxy A35 5G", "Galaxy A35", "Galaxy A34 5G", "Galaxy A34", "Galaxy A33 5G", "Galaxy A32 5G", "Galaxy A32", "Galaxy A31", "Galaxy A30s", "Galaxy A30",
+    "Galaxy A26", "Galaxy A25 5G", "Galaxy A25", "Galaxy A24", "Galaxy A23 5G", "Galaxy A23", "Galaxy A22 5G", "Galaxy A22 4G", "Galaxy A21s", "Galaxy A21", "Galaxy A20s", "Galaxy A20",
+    "Galaxy A16", "Galaxy A15 5G", "Galaxy A15", "Galaxy A14 5G", "Galaxy A14", "Galaxy A13 5G", "Galaxy A13", "Galaxy A12 Nacho", "Galaxy A12", "Galaxy A11", "Galaxy A10s", "Galaxy A10",
+    "Galaxy A05s", "Galaxy A05", "Galaxy A04s", "Galaxy A04", "Galaxy A03s", "Galaxy A03", "Galaxy A02s", "Galaxy A02", "Galaxy A01",
+    "Galaxy A73 5G", "Galaxy A72", "Galaxy A71 5G", "Galaxy A71", "Galaxy A70s", "Galaxy A70", "Galaxy A42 5G", "Galaxy A41", "Galaxy A40"
   ] },
   "Samsung Galaxy Z": { models: [
     "Galaxy Z Fold 7", "Galaxy Z Fold 6", "Galaxy Z Fold 5", "Galaxy Z Fold 4", "Galaxy Z Fold 3",
@@ -53,12 +55,14 @@ const DEVICES_RAW: Record<string, { models: string[] }> = {
     "Galaxy Note 20 Ultra", "Galaxy Note 20", "Galaxy Note 10+", "Galaxy Note 10", "Galaxy Note 9", "Galaxy Note 8"
   ] },
   "Samsung Galaxy Tablet": { models: [
-    "Galaxy Tab S10 Ultra", "Galaxy Tab S10+", 
+    "Galaxy Tab S10 Ultra", "Galaxy Tab S10+", "Galaxy Tab S10",
     "Galaxy Tab S9 Ultra", "Galaxy Tab S9+", "Galaxy Tab S9", "Galaxy Tab S9 FE+", "Galaxy Tab S9 FE",
     "Galaxy Tab S8 Ultra", "Galaxy Tab S8+", "Galaxy Tab S8",
-    "Galaxy Tab S7+", "Galaxy Tab S7", "Galaxy Tab S7 FE",
-    "Galaxy Tab S6", "Galaxy Tab S6 Lite",
-    "Galaxy Tab A9+", "Galaxy Tab A9", "Galaxy Tab A8", "Galaxy Tab A7", "Galaxy Tab A7 Lite"
+    "Galaxy Tab S7+", "Galaxy Tab S7", "Galaxy Tab S7 FE", "Galaxy Tab S7 Lite",
+    "Galaxy Tab S6 Lite (2024)", "Galaxy Tab S6 Lite (2022)", "Galaxy Tab S6 Lite", "Galaxy Tab S6", "Galaxy Tab S5e", "Galaxy Tab S4", "Galaxy Tab S3",
+    "Galaxy Tab Active 5", "Galaxy Tab Active 4 Pro", "Galaxy Tab Active 3", "Galaxy Tab Active 2",
+    "Galaxy Tab A9+ 5G", "Galaxy Tab A9+", "Galaxy Tab A9", "Galaxy Tab A8 10.5", "Galaxy Tab A8",
+    "Galaxy Tab A7 10.4", "Galaxy Tab A7", "Galaxy Tab A7 Lite", "Galaxy Tab A 10.1 (2019)", "Galaxy Tab A 8.0 (2019)", "Galaxy Tab A 10.5 (2018)"
   ] },
   "Oppo Find": { models: ["Find X8 Ultra", "Find X8", "Find X7 Ultra", "Find X7", "Find X6 Pro", "Find X5 Pro"] },
   "Oppo Reno": { models: ["Reno 13 Pro", "Reno 13", "Reno 12 Pro", "Reno 12", "Reno 11 Pro", "Reno 11"] },
