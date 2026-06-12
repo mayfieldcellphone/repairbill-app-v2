@@ -38,7 +38,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { InvoiceTemplate } from './InvoiceTemplate';
 import { generatePDF, printInvoice, shareInvoice } from '../lib/invoiceUtils';
 
-export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onClose, nextInvoiceNumber, initialType = 'invoice', brands: initialBrands, onCatalogUpdate, services: initialServices, onServicesUpdate }: { 
+export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onClose, nextInvoiceNumber, initialType = 'invoice', brands: initialBrands, onCatalogUpdate, services: initialServices, onServicesUpdate, initialBrandName, initialServiceName }: { 
   settings: InvoiceSettings,
   onInvoiceCreated: (invoice: Invoice) => void,
   invoiceToEdit?: Invoice | null,
@@ -48,16 +48,39 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
   brands?: Brand[],
   onCatalogUpdate?: (data: { brandName: string, modelName?: string, action: 'add_brand' | 'add_model' | 'remove_brand' | 'remove_model' }) => void,
   services?: RepairService[],
-  onServicesUpdate?: (services: RepairService[], deletedId?: string) => void
+  onServicesUpdate?: (services: RepairService[], deletedId?: string) => void,
+  initialBrandName?: string,
+  initialServiceName?: string
 }) {
   const theme = settings.appTheme;
   const [step, setStep] = useState(1);
   const [docType, setDocType] = useState<'invoice' | 'estimate'>(initialType);
   const [brandsLocal, setBrandsLocal] = useState<Brand[]>(() => getBrandCatalog());
   const brands = initialBrands || brandsLocal;
-  const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
-  const [selectedSeries, setSelectedSeries] = useState<ProductSeries | null>(null);
-  const [selectedModel, setSelectedModel] = useState<ProductModel | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<Brand | null>(() => {
+    if (initialBrandName) {
+      return (initialBrands || brandsLocal).find(b => b.name.toLowerCase() === initialBrandName.toLowerCase()) || null;
+    }
+    return null;
+  });
+  const [selectedSeries, setSelectedSeries] = useState<ProductSeries | null>(() => {
+    if (initialBrandName) {
+      const brand = (initialBrands || brandsLocal).find(b => b.name.toLowerCase() === initialBrandName.toLowerCase());
+      if (brand && brand.series && brand.series.length > 0) {
+        return brand.series[0];
+      }
+    }
+    return null;
+  });
+  const [selectedModel, setSelectedModel] = useState<ProductModel | null>(() => {
+    if (initialBrandName) {
+      const brand = (initialBrands || brandsLocal).find(b => b.name.toLowerCase() === initialBrandName.toLowerCase());
+      if (brand && brand.series && brand.series.length > 0 && brand.series[0].models && brand.series[0].models.length > 0) {
+        return brand.series[0].models[0];
+      }
+    }
+    return null;
+  });
   const [invoiceDate, setInvoiceDate] = useState(() => {
     const today = new Date();
     return today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
@@ -115,6 +138,39 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
     return getSavedServices();
   });
   const services = initialServices || servicesLocal;
+
+  // Advance to step 2 if a brand is preset
+  useEffect(() => {
+    if (initialBrandName && selectedBrand && selectedModel && !invoiceToEdit) {
+      setStep(2);
+    }
+  }, [initialBrandName, selectedBrand, selectedModel, invoiceToEdit]);
+
+  // Auto-add preset service if provided
+  useEffect(() => {
+    if (initialServiceName && selectedBrand && selectedModel && invoiceItems.length === 0 && !invoiceToEdit) {
+      const srv = services.find(s => s.name.toLowerCase() === initialServiceName.toLowerCase());
+      if (srv) {
+        const savedPricesRaw = localStorage.getItem('honeybill_service_prices');
+        const sPrices = savedPricesRaw ? JSON.parse(savedPricesRaw) : {};
+        const initialPrice = sPrices[srv.id] || srv.basePrice || 0;
+        const newItem: InvoiceItem = {
+          id: Math.random().toString(36).substr(2, 9),
+          serviceId: srv.id,
+          brandName: selectedBrand.name,
+          modelName: selectedModel.name,
+          serviceName: srv.name,
+          price: initialPrice,
+          quantity: 1,
+        };
+        setInvoiceItems([newItem]);
+        setHistory([[newItem]]);
+        setHistoryIndex(0);
+        setStep(2);
+      }
+    }
+  }, [initialServiceName, selectedBrand, selectedModel, services, invoiceToEdit]);
+
   const handleUpdateServices = (updated: RepairService[], deletedId?: string) => {
     if (onServicesUpdate) {
       onServicesUpdate(updated, deletedId);
@@ -1485,6 +1541,20 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
                     )}
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {getFilteredServicesList().length === 0 && (
+                        <div className="col-span-full py-8 text-center bg-muted/20 border border-dashed border-border rounded-2xl p-6">
+                          <p className="text-xs text-muted-foreground font-semibold">
+                            No common services visible in this category.
+                          </p>
+                          <button 
+                            type="button" 
+                            onClick={() => setShowAllServices(true)}
+                            className="mt-2 text-xs font-bold text-primary hover:underline uppercase tracking-wider"
+                          >
+                            Show All & Hidden Services
+                          </button>
+                        </div>
+                      )}
                       {getFilteredServicesList().map(service => {
                         const isMultiSelected = invoiceMultiSelectedServices.some(s => s.id === service.id);
                         return (
@@ -1942,6 +2012,20 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
                        )}
 
                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                         {getFilteredServicesList().length === 0 && (
+                           <div className="col-span-full py-6 text-center bg-muted/20 border border-dashed border-border rounded-xl px-4">
+                             <p className="text-xs text-muted-foreground font-bold">
+                               No common services visible here.
+                             </p>
+                             <button 
+                               type="button" 
+                               onClick={() => setShowAllServices(true)}
+                               className="mt-1 text-[10px] font-black text-primary hover:underline uppercase tracking-widest"
+                             >
+                               Show All Services
+                             </button>
+                           </div>
+                         )}
                          {getFilteredServicesList().map(service => (
                            <button 
                              type="button"

@@ -304,6 +304,8 @@ export default function App() {
   const [showCreator, setShowCreator] = useState(false);
   const [showAIAgent, setShowAIAgent] = useState(false);
   const [creatorType, setCreatorType] = useState<'invoice' | 'estimate'>('invoice');
+  const [presetBrandName, setPresetBrandName] = useState<string | undefined>(undefined);
+  const [presetServiceName, setPresetServiceName] = useState<string | undefined>(undefined);
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [brands, setBrands] = useState<Brand[]>(() => getBrandCatalog());
@@ -413,7 +415,7 @@ export default function App() {
   // Sync Services from Firestore
   useEffect(() => {
     if (!user) return;
-    return subscribeToDocuments<RepairService>(`users/${user.uid}/services`, (data) => {
+    return subscribeToDocuments<RepairService>(`users/${user.uid}/services`, async (data) => {
       if (data.length > 0) {
         // Sort by 'order' if it exists, fallback to name or existing order
         const sorted = [...data].sort((a, b) => {
@@ -424,6 +426,16 @@ export default function App() {
         });
         setServices(sorted);
         localStorage.setItem('honeybill_custom_services', JSON.stringify(sorted));
+      } else {
+        // Bootstrap the database collection if it is currently empty!
+        const initial = getSavedServices();
+        if (initial && initial.length > 0) {
+          const batchData = initial.map(s => ({
+            id: s.id,
+            data: s
+          }));
+          await saveDocumentsBatch(`users/${user.uid}/services`, batchData);
+        }
       }
     });
   }, [user]);
@@ -997,6 +1009,7 @@ export default function App() {
                     invoices={invoices} 
                     expenses={expenses}
                     settings={settings} 
+                    brands={brands}
                     onCreateInvoice={() => {
                       setCreatorType('invoice');
                       setActiveTab('invoices');
@@ -1007,12 +1020,33 @@ export default function App() {
                       setActiveTab('estimates');
                       setShowCreator(true);
                     }}
-                    onQuickService={(service) => {
-                      setActiveTab('ai-agent');
-                      setTimeout(() => {
-                        const event = new CustomEvent('open-ai-agent-with-prompt', { detail: { prompt: `Start a new invoice for ${service.name}` } });
-                        window.dispatchEvent(event);
-                      }, 50);
+                    onQuickService={(service, mode = 'ai') => {
+                      if (mode === 'manual') {
+                        setPresetServiceName(service.name);
+                        setCreatorType('invoice');
+                        setActiveTab('invoices');
+                        setShowCreator(true);
+                      } else {
+                        setActiveTab('ai-agent');
+                        setTimeout(() => {
+                          const event = new CustomEvent('open-ai-agent-with-prompt', { detail: { prompt: `Start a new invoice for ${service.name}` } });
+                          window.dispatchEvent(event);
+                        }, 50);
+                      }
+                    }}
+                    onQuickBrand={(brand, mode = 'ai') => {
+                      if (mode === 'manual') {
+                        setPresetBrandName(brand.name);
+                        setCreatorType('invoice');
+                        setActiveTab('invoices');
+                        setShowCreator(true);
+                      } else {
+                        setActiveTab('ai-agent');
+                        setTimeout(() => {
+                          const event = new CustomEvent('open-ai-agent-with-prompt', { detail: { prompt: `Start a new invoice for ${brand.name}` } });
+                          window.dispatchEvent(event);
+                        }, 50);
+                      }
                     }}
                     onFilterInvoices={handleFilterInvoices}
                     onEditInvoice={handleEditInvoice}
@@ -1141,6 +1175,8 @@ export default function App() {
                   setSettings={handleSettingsUpdate} 
                   onBrandsReordered={handleBrandsReordered}
                   onCatalogUpdate={handleCatalogUpdate}
+                  services={services}
+                  onServicesUpdate={handleServicesUpdate}
                 />
               </motion.div>
             ) : activeTab === 'users' && isMasterAdmin ? (
@@ -1193,11 +1229,19 @@ export default function App() {
                       onCatalogUpdate={handleCatalogUpdate}
                       services={services}
                       onServicesUpdate={handleServicesUpdate}
+                      initialBrandName={presetBrandName}
+                      initialServiceName={presetServiceName}
                       onClose={() => {
                         setShowCreator(false);
                         setEditingInvoice(null);
+                        setPresetBrandName(undefined);
+                        setPresetServiceName(undefined);
                       }}
-                      onInvoiceCreated={handleInvoiceCreated}
+                      onInvoiceCreated={(newInvoice) => {
+                        handleInvoiceCreated(newInvoice);
+                        setPresetBrandName(undefined);
+                        setPresetServiceName(undefined);
+                      }}
                     />
                   </div>
                 ) : (

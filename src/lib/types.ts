@@ -121,6 +121,7 @@ export interface InvoiceSettings {
   charlaApiKey?: string;
   creationFlowOrder?: 'brand-first' | 'service-first';
   dashboardServiceIds?: string[];
+  dashboardBrandIds?: string[];
   aiProvider?: 'gemini' | 'openai';
   geminiApiKey?: string;
   geminiModel?: string;

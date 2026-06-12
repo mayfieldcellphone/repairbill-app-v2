@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@radix-ui/react-label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Palette, Type, Building2, Save, CreditCard, FileText, Check, Smartphone, Plus, Trash2, LayoutDashboard, Code, Copy, Zap, GripVertical, TrendingUp, Cpu } from 'lucide-react';
+import { Eye, EyeOff, Search, Palette, Type, Building2, Save, CreditCard, FileText, Check, Smartphone, Plus, Trash2, LayoutDashboard, Code, Copy, Zap, GripVertical, TrendingUp, Cpu, Pin } from 'lucide-react';
 import { InvoiceSettings, Brand, ProductSeries, ProductModel, RepairService } from '../lib/types';
 import { getBrandCatalog, saveCustomBrand, saveCustomModel, saveBrandOrder } from '../lib/deviceStore';
 import { REPAIR_SERVICES, getSavedServices } from '../lib/serviceData';
@@ -24,9 +24,11 @@ interface SettingsViewProps {
     action: 'add_brand' | 'add_model' | 'remove_brand' | 'remove_model' | 'update_brand',
     updatedBrand?: Brand 
   }) => void;
+  services?: RepairService[];
+  onServicesUpdate?: (services: RepairService[], deletedId?: string) => void;
 }
 
-export function SettingsView({ settings, setSettings, onBrandsReordered, onCatalogUpdate }: SettingsViewProps) {
+export function SettingsView({ settings, setSettings, onBrandsReordered, onCatalogUpdate, services, onServicesUpdate }: SettingsViewProps) {
   const { user, profile } = useAuth();
   const [localSettings, setLocalSettings] = useState<InvoiceSettings>(settings);
   const [isSaving, setIsSaving] = useState(false);
@@ -465,7 +467,14 @@ export function SettingsView({ settings, setSettings, onBrandsReordered, onCatal
             </TabsContent>
 
             <TabsContent value="catalog" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2">
-              <CatalogManager settings={localSettings} onBrandsReordered={onBrandsReordered} onCatalogUpdate={onCatalogUpdate} />
+              <CatalogManager 
+                settings={localSettings} 
+                setSettings={setLocalSettings}
+                onBrandsReordered={onBrandsReordered} 
+                onCatalogUpdate={onCatalogUpdate}
+                services={services}
+                onServicesUpdate={onServicesUpdate}
+              />
             </TabsContent>
 
             <TabsContent value="dashboard" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2">
@@ -1099,6 +1108,10 @@ function DashboardManager({ settings, setSettings }: DashboardManagerProps) {
     return getSavedServices();
   });
 
+  const [brands, setBrands] = useState<Brand[]>(() => {
+    return getBrandCatalog();
+  });
+
   const toggleServiceDashboard = (serviceId: string) => {
     const currentList = settings.dashboardServiceIds || [];
     const isActive = currentList.includes(serviceId);
@@ -1111,19 +1124,31 @@ function DashboardManager({ settings, setSettings }: DashboardManagerProps) {
     setSettings({ ...settings, dashboardServiceIds: newList });
   };
 
+  const toggleBrandDashboard = (brandId: string) => {
+    const currentList = settings.dashboardBrandIds || [];
+    const isActive = currentList.includes(brandId);
+    let newList;
+    if (isActive) {
+      newList = currentList.filter(id => id !== brandId);
+    } else {
+      newList = [...currentList, brandId];
+    }
+    setSettings({ ...settings, dashboardBrandIds: newList });
+  };
+
   return (
-    <div className="bg-card border border-border shadow-sm rounded-3xl p-6 md:p-8 space-y-6">
+    <div className="bg-card border border-border shadow-sm rounded-3xl p-6 md:p-8 space-y-8">
       <div>
         <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
           <TrendingUp className="text-primary" size={24} />
         </div>
         <h3 className="text-2xl font-black text-foreground tracking-tight">Dashboard Settings</h3>
-        <p className="text-muted-foreground font-medium">Select quick access services to be featured on your main operational dashboard.</p>
+        <p className="text-muted-foreground font-medium">Select quick access services and manufacturer brands to be featured on your main operational dashboard.</p>
       </div>
 
       <div className="border-t border-border pt-6 space-y-6">
         <div>
-          <Label className="text-sm font-bold text-foreground mb-4 block">Quick Services Display</Label>
+          <Label className="text-sm font-black uppercase tracking-wider text-muted-foreground/80 mb-3 block">Quick Services Display</Label>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {services.map(service => {
               const isSelected = (settings.dashboardServiceIds || []).includes(service.id);
@@ -1139,7 +1164,7 @@ function DashboardManager({ settings, setSettings }: DashboardManagerProps) {
                   )}
                 >
                   <span className={cn(
-                    "text-sm font-bold", 
+                    "text-xs font-bold", 
                     isSelected ? "text-primary" : "text-foreground"
                   )}>
                     {service.name}
@@ -1155,6 +1180,40 @@ function DashboardManager({ settings, setSettings }: DashboardManagerProps) {
             })}
           </div>
         </div>
+
+        <div className="border-t border-border pt-6">
+          <Label className="text-sm font-black uppercase tracking-wider text-muted-foreground/80 mb-3 block">Quick Brands Display</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {brands.map(brand => {
+              const isSelected = (settings.dashboardBrandIds || []).includes(brand.id);
+              return (
+                <button
+                  key={brand.id}
+                  onClick={() => toggleBrandDashboard(brand.id)}
+                  className={cn(
+                    "p-4 rounded-xl border text-left flex justify-between items-center transition-all",
+                    isSelected 
+                      ? "bg-amber-500/5 border-amber-500/50 shadow-sm" 
+                      : "bg-card border-border hover:border-amber-500/30"
+                  )}
+                >
+                  <span className={cn(
+                    "text-xs font-bold", 
+                    isSelected ? "text-amber-600" : "text-foreground"
+                  )}>
+                    {brand.name}
+                  </span>
+                  <div className={cn(
+                    "w-5 h-5 rounded-md flex items-center justify-center transition-colors",
+                    isSelected ? "bg-amber-500 text-white" : "bg-muted text-transparent border border-border"
+                  )}>
+                    <Check size={12} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1162,6 +1221,7 @@ function DashboardManager({ settings, setSettings }: DashboardManagerProps) {
 
 interface CatalogManagerProps {
   settings: InvoiceSettings;
+  setSettings?: (settings: InvoiceSettings) => void;
   onBrandsReordered?: (brands: Brand[]) => void;
   onCatalogUpdate?: (data: { 
     brandName: string, 
@@ -1169,13 +1229,64 @@ interface CatalogManagerProps {
     action: 'add_brand' | 'add_model' | 'remove_brand' | 'remove_model' | 'update_brand',
     updatedBrand?: Brand 
   }) => void;
+  services?: RepairService[];
+  onServicesUpdate?: (services: RepairService[], deletedId?: string) => void;
 }
 
-function CatalogManager({ settings, onBrandsReordered, onCatalogUpdate }: CatalogManagerProps) {
+function CatalogManager({ settings, setSettings, onBrandsReordered, onCatalogUpdate, services: initialServices, onServicesUpdate }: CatalogManagerProps) {
   const [brands, setBrands] = useState<Brand[]>(() => getBrandCatalog());
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
   const [newBrandName, setNewBrandName] = useState('');
   const [newModelName, setNewModelName] = useState('');
+  const [brandSearch, setBrandSearch] = useState('');
+
+  const handleToggleBrandPin = (brandId: string) => {
+    if (!setSettings) return;
+    const currentList = settings.dashboardBrandIds || [];
+    const isActive = currentList.includes(brandId);
+    let newList;
+    if (isActive) {
+      newList = currentList.filter(id => id !== brandId);
+    } else {
+      newList = [...currentList, brandId];
+    }
+    setSettings({ ...settings, dashboardBrandIds: newList });
+  };
+
+  const handleToggleServicePin = (serviceId: string) => {
+    if (!setSettings) return;
+    const currentList = settings.dashboardServiceIds || [];
+    const isActive = currentList.includes(serviceId);
+    let newList;
+    if (isActive) {
+      newList = currentList.filter(id => id !== serviceId);
+    } else {
+      newList = [...currentList, serviceId];
+    }
+    setSettings({ ...settings, dashboardServiceIds: newList });
+  };
+  
+  // Services local fallback
+  const [servicesLocal, setServicesLocal] = useState<RepairService[]>(() => getSavedServices());
+  const services = initialServices || servicesLocal;
+  
+  const updateServicesList = (updated: RepairService[], deletedId?: string) => {
+    if (onServicesUpdate) {
+      onServicesUpdate(updated, deletedId);
+    } else {
+      setServicesLocal(updated);
+      localStorage.setItem('honeybill_custom_services', JSON.stringify(updated));
+    }
+  };
+
+  const [view, setView] = useState<'devices' | 'services'>('devices');
+  const [serviceSearch, setServiceSearch] = useState('');
+  const [serviceCategory, setServiceCategory] = useState<'all' | 'hardware' | 'software' | 'accessory' | 'other'>('all');
+  
+  // Form input states
+  const [newServiceName, setNewServiceName] = useState('');
+  const [newServicePrice, setNewServicePrice] = useState('');
+  const [newServiceCat, setNewServiceCat] = useState<'hardware' | 'software' | 'accessory' | 'other'>('hardware');
   
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -1243,148 +1354,434 @@ function CatalogManager({ settings, onBrandsReordered, onCatalogUpdate }: Catalo
     if (selectedBrand?.id === id) setSelectedBrand(null);
   };
 
+  const handleAddService = () => {
+    if (!newServiceName.trim()) return;
+    const price = parseFloat(newServicePrice) || 0;
+    const newService: RepairService = {
+      id: `custom-${Math.random().toString(36).substr(2, 9)}`,
+      name: newServiceName.trim(),
+      category: newServiceCat,
+      basePrice: price,
+      hidden: false
+    };
+    const updated = [...services, newService];
+    updateServicesList(updated);
+    setNewServiceName('');
+    setNewServicePrice('');
+  };
+
+  const handleDeleteService = (id: string) => {
+    if (confirm("Delete this service from the catalog?")) {
+      const updated = services.filter(s => s.id !== id);
+      updateServicesList(updated, id);
+    }
+  };
+
+  const handleToggleVisibility = (id: string) => {
+    const updated = services.map(s => 
+      s.id === id ? { ...s, hidden: !s.hidden } : s
+    );
+    updateServicesList(updated);
+  };
+
+  const handlePriceChange = (id: string, value: string) => {
+    const price = parseFloat(value) || 0;
+    const updated = services.map(s => 
+      s.id === id ? { ...s, basePrice: price } : s
+    );
+    updateServicesList(updated);
+  };
+
   return (
     <div className="space-y-6">
-      {!selectedBrand ? (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Input 
-              placeholder="e.g. Nothing" 
-              value={newBrandName}
-              onChange={(e) => setNewBrandName(e.target.value)}
-              className="rounded-xl bg-card border-border"
-            />
-            <button 
-              onClick={handleAddBrand}
-              className="p-3 rounded-xl text-primary-foreground shadow-sm"
-              style={{ backgroundColor: settings.primaryColor }}
-            >
-              <Plus size={20} />
-            </button>
-          </div>
-          
-          <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId="brands">
-              {(provided) => (
-                <div 
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  className="grid grid-cols-1 gap-2"
-                >
-                  {brands.map((brand, index) => (
-                    <Draggable key={brand.id} draggableId={brand.id} index={index}>
-                      {(provided, snapshot) => (
-                        <div 
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          className={cn(
-                            "flex items-center justify-between p-4 bg-card border border-border rounded-2xl hover:border-primary/50 transition-all cursor-pointer group",
-                            snapshot.isDragging && "shadow-2xl ring-2 ring-primary/20 border-primary z-50 bg-card/90 backdrop-blur-md"
-                          )}
-                          onClick={() => setSelectedBrand(brand)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div 
-                              {...provided.dragHandleProps}
-                              className="p-1 hover:bg-muted rounded text-muted-foreground/30 cursor-grab active:cursor-grabbing"
-                            >
-                              <GripVertical size={16} />
-                            </div>
-                            <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
-                              {brand.name[0]}
-                            </div>
-                            <span className="font-bold text-foreground/90">{brand.name}</span>
-                            <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full uppercase tracking-widest font-bold">
-                              {brand.series.reduce((acc, s) => acc + s.models.length, 0)} models
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); handleDeleteBrand(brand.id); }}
-                              className="p-2 text-muted-foreground/30 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                            <Eye size={16} className="text-muted-foreground/40" />
-                          </div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <div className="flex items-center gap-3 mb-4">
-            <button 
-              onClick={() => setSelectedBrand(null)}
-              className="p-2 bg-muted rounded-lg text-muted-foreground hover:bg-muted/80"
-            >
-              <Smartphone size={16} />
-            </button>
-            <h4 className="font-bold text-foreground">{selectedBrand.name} Models</h4>
-          </div>
+      <div className="flex bg-muted p-1 rounded-2xl w-fit">
+        <button 
+          type="button"
+          onClick={() => { setView('devices'); setSelectedBrand(null); }}
+          className={cn("px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", view === 'devices' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+        >
+          Manage Devices
+        </button>
+        <button 
+          type="button"
+          onClick={() => setView('services')}
+          className={cn("px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", view === 'services' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+        >
+          Manage Services
+        </button>
+      </div>
 
-          {selectedBrand.series.map(series => (
-            <div key={series.id} className="space-y-3 bg-muted/30 p-4 rounded-2xl border border-border">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-muted-foreground/60 uppercase tracking-widest">{series.name}</span>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-2">
-                {series.models.map(model => (
-                  <div key={model.id} className="bg-card px-3 py-2 rounded-xl border border-border text-xs font-medium text-foreground/80 flex justify-between items-center group">
-                    {model.name}
-                    <button 
-                      onClick={() => {
-                        const updatedBrands = brands.map(b => {
-                          if (b.id === selectedBrand.id) {
-                            return {
-                              ...b,
-                              series: b.series.map(s => {
-                                if (s.id === series.id) {
-                                  return { ...s, models: s.models.filter(m => m.id !== model.id) };
-                                }
-                                return s;
-                              })
-                            };
-                          }
-                          return b;
-                        });
-                        localStorage.setItem('honeybill_custom_devices', JSON.stringify(updatedBrands));
-                        setBrands(updatedBrands);
-                        setSelectedBrand(updatedBrands.find(b => b.id === selectedBrand.id) || null);
-                      }}
-                      className="text-muted-foreground/20 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
+      {view === 'devices' ? (
+        !selectedBrand ? (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-3 bg-muted/40 p-3 rounded-2xl border border-border/60">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input 
-                  placeholder="New model name..." 
-                  className="rounded-xl h-9 text-xs bg-card border-border"
-                  value={newModelName}
-                  onChange={(e) => setNewModelName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddModel(series.id)}
+                  placeholder="Search manufacturer brands..." 
+                  value={brandSearch}
+                  onChange={(e) => setBrandSearch(e.target.value)}
+                  className="pl-9 rounded-xl bg-card border-border h-11 text-sm font-medium"
+                />
+              </div>
+              <div className="flex items-center gap-2 flex-1">
+                <Input 
+                  placeholder="e.g. Google Pixel or Asus" 
+                  value={newBrandName}
+                  onChange={(e) => setNewBrandName(e.target.value)}
+                  className="rounded-xl bg-card border-border h-11 text-sm font-medium"
                 />
                 <button 
-                  onClick={() => handleAddModel(series.id)}
-                  className="p-2 rounded-xl text-primary-foreground shadow-sm flex-shrink-0"
-                  style={{ backgroundColor: settings.primaryColor }}
+                  onClick={handleAddBrand}
+                  className="p-3 bg-primary text-primary-foreground hover:bg-primary/95 rounded-xl text-primary-foreground shadow-sm h-11 flex-shrink-0 flex items-center justify-center transition-all px-4"
+                  title="Add Brand"
                 >
-                  <Plus size={16} />
+                  <Plus size={18} className="mr-1" />
+                  <span className="text-xs font-bold">Add</span>
                 </button>
               </div>
             </div>
-          ))}
+            
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable droppableId="brands">
+                {(provided) => (
+                  <div 
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="grid grid-cols-1 gap-2"
+                  >
+                    {brands
+                      .filter(b => b.name.toLowerCase().includes(brandSearch.trim().toLowerCase()))
+                      .map((brand, index) => (
+                      <Draggable key={brand.id} draggableId={brand.id} index={index}>
+                        {(provided, snapshot) => (
+                          <div 
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className={cn(
+                              "flex items-center justify-between p-4 bg-card border border-border rounded-2xl hover:border-primary/50 transition-all cursor-pointer group",
+                              snapshot.isDragging && "shadow-2xl ring-2 ring-primary/20 border-primary z-50 bg-card/90 backdrop-blur-md"
+                            )}
+                            onClick={() => setSelectedBrand(brand)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div 
+                                {...provided.dragHandleProps}
+                                className="p-1 hover:bg-muted rounded text-muted-foreground/30 cursor-grab active:cursor-grabbing"
+                              >
+                                <GripVertical size={16} />
+                              </div>
+                              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
+                                {brand.name[0]}
+                              </div>
+                              <span className="font-bold text-foreground/90">{brand.name}</span>
+                              <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full uppercase tracking-widest font-bold">
+                                {brand.series.reduce((acc, s) => acc + s.models.length, 0)} models
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                              <button 
+                                onClick={() => handleToggleBrandPin(brand.id)}
+                                className={cn(
+                                  "p-2 rounded-xl transition-all border",
+                                  (settings.dashboardBrandIds || []).includes(brand.id)
+                                    ? "text-amber-500 bg-amber-500/10 border-amber-500/20"
+                                    : "text-muted-foreground/35 hover:text-amber-500 hover:bg-amber-500/5 hover:border-amber-500/10 border-transparent"
+                                )}
+                                title={(settings.dashboardBrandIds || []).includes(brand.id) ? "Featured on Dashboard" : "Pin to Dashboard"}
+                              >
+                                <Pin size={14} className={cn((settings.dashboardBrandIds || []).includes(brand.id) && "fill-amber-500 text-amber-500")} />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteBrand(brand.id)}
+                                className="p-2 text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
+                                title="Delete Brand"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 bg-card border border-border p-4 rounded-3xl shadow-sm">
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setSelectedBrand(null)}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-muted hover:bg-muted/80 rounded-xl text-[10px] font-black uppercase tracking-wider text-muted-foreground transition-all"
+                >
+                  <span>← Back</span>
+                </button>
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-bold">
+                  {selectedBrand.name[0]}
+                </div>
+                <div>
+                  <h4 className="font-bold text-foreground text-md leading-tight">{selectedBrand.name} Models</h4>
+                  <p className="text-[10px] text-muted-foreground font-medium">Manage model series catalog for {selectedBrand.name}</p>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => handleToggleBrandPin(selectedBrand.id)}
+                className={cn(
+                  "px-4 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-2",
+                  (settings.dashboardBrandIds || []).includes(selectedBrand.id)
+                    ? "text-amber-600 bg-amber-500/10 border-amber-500/20"
+                    : "text-muted-foreground border-border hover:bg-muted/60"
+                )}
+              >
+                <Pin size={14} className={cn((settings.dashboardBrandIds || []).includes(selectedBrand.id) && "fill-amber-600")} />
+                {(settings.dashboardBrandIds || []).includes(selectedBrand.id) ? "Pinned to Dashboard" : "Pin Brand to Dashboard"}
+              </button>
+            </div>
+
+            {selectedBrand.series.map(series => (
+              <div key={series.id} className="space-y-3 bg-muted/30 p-4 rounded-2xl border border-border">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-muted-foreground/60 uppercase tracking-widest">{series.name}</span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  {series.models.map(model => (
+                    <div key={model.id} className="bg-card px-3 py-2 rounded-xl border border-border text-xs font-medium text-foreground/80 flex justify-between items-center group">
+                      {model.name}
+                      <button 
+                        onClick={() => {
+                          const updatedBrands = brands.map(b => {
+                            if (b.id === selectedBrand.id) {
+                              return {
+                                ...b,
+                                series: b.series.map(s => {
+                                  if (s.id === series.id) {
+                                    return { ...s, models: s.models.filter(m => m.id !== model.id) };
+                                  }
+                                  return s;
+                                })
+                              };
+                            }
+                            return b;
+                          });
+                          localStorage.setItem('honeybill_custom_devices', JSON.stringify(updatedBrands));
+                          setBrands(updatedBrands);
+                          setSelectedBrand(updatedBrands.find(b => b.id === selectedBrand.id) || null);
+                        }}
+                        className="text-muted-foreground/20 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2 pt-2">
+                  <Input 
+                    placeholder="New model name..." 
+                    className="rounded-xl h-9 text-xs bg-card border-border"
+                    value={newModelName}
+                    onChange={(e) => setNewModelName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddModel(series.id)}
+                  />
+                  <button 
+                    onClick={() => handleAddModel(series.id)}
+                    className="p-2 rounded-xl text-primary-foreground shadow-sm flex-shrink-0"
+                    style={{ backgroundColor: settings.primaryColor }}
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      ) : (
+        <div className="space-y-6">
+          {/* Quick Add Service Form */}
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-4 shadow-sm">
+            <h5 className="text-xs font-black uppercase tracking-widest text-muted-foreground animate-in fade-in">Add Custom Repair Service</h5>
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+              <div className="md:col-span-5 space-y-1">
+                <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Service Name</label>
+                <Input 
+                  placeholder="e.g. Back Glass Replacement (Laser)" 
+                  value={newServiceName} 
+                  onChange={e => setNewServiceName(e.target.value)}
+                  className="rounded-xl bg-card border-border h-10 text-xs"
+                />
+              </div>
+              <div className="md:col-span-3 space-y-1">
+                <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Category</label>
+                <select
+                  value={newServiceCat}
+                  onChange={e => setNewServiceCat(e.target.value as any)}
+                  className="w-full bg-card border border-border rounded-xl h-10 px-3 text-xs focus:ring-1 focus:ring-primary outline-none"
+                >
+                  <option value="hardware">Hardware</option>
+                  <option value="software">Software</option>
+                  <option value="accessory">Accessory</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div className="md:col-span-2 space-y-1">
+                <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Default Price ({settings.currency})</label>
+                <Input 
+                  type="number"
+                  placeholder="0.00" 
+                  value={newServicePrice} 
+                  onChange={e => setNewServicePrice(e.target.value)}
+                  className="rounded-xl bg-card border-border h-10 text-xs"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <button 
+                  onClick={handleAddService}
+                  className="w-full h-10 rounded-xl text-primary-foreground font-black text-xs uppercase tracking-widest shadow-sm flex items-center justify-center gap-2"
+                  style={{ backgroundColor: settings.primaryColor }}
+                >
+                  <Plus size={16} /> Create
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Search and category filters */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+              {(['all', 'hardware', 'software', 'accessory', 'other'] as const).map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setServiceCategory(cat)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-wider transition-all whitespace-nowrap",
+                    serviceCategory === cat 
+                      ? "bg-primary text-primary-foreground font-black" 
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  )}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input 
+                placeholder="Search services..." 
+                value={serviceSearch}
+                onChange={e => setServiceSearch(e.target.value)}
+                className="pl-9 rounded-xl bg-card border-border h-9 text-xs"
+              />
+            </div>
+          </div>
+
+          {/* Services list table */}
+          <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+            <div className="overflow-x-auto max-h-[400px] overflow-y-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-muted/50 border-b border-border sticky top-0 z-10">
+                  <tr>
+                    <th className="px-5 py-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground">Service Name</th>
+                    <th className="px-5 py-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground text-center">Category</th>
+                    <th className="px-5 py-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground text-center">Status</th>
+                    <th className="px-5 py-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground text-center">Dashboard</th>
+                    <th className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-muted-foreground text-right w-36">Base Price ({settings.currency})</th>
+                    <th className="px-5 py-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {services
+                    .filter(s => {
+                      const matchesSearch = s.name.toLowerCase().includes(serviceSearch.toLowerCase());
+                      const matchesCat = serviceCategory === 'all' || s.category === serviceCategory;
+                      return matchesSearch && matchesCat;
+                    })
+                    .map(service => (
+                      <tr key={service.id} className="hover:bg-muted/20 transition-colors group">
+                        <td className="px-5 py-3">
+                          <span className="text-xs font-bold text-foreground">{service.name}</span>
+                        </td>
+                        <td className="px-5 py-3 text-center">
+                          <span className={cn(
+                            "text-[9px] font-black uppercase px-2 py-0.5 rounded-md",
+                            service.category === 'hardware' ? "bg-amber-500/10 text-amber-600" :
+                            service.category === 'software' ? "bg-blue-500/10 text-blue-600" :
+                            service.category === 'accessory' ? "bg-purple-500/10 text-purple-600" : "bg-slate-500/10 text-slate-600"
+                          )}>
+                            {service.category}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleVisibility(service.id)}
+                            className={cn(
+                              "p-1.5 rounded-lg transition-all",
+                              service.hidden ? "text-muted-foreground/40 hover:text-muted-foreground" : "text-primary hover:text-primary/80 bg-primary/5"
+                            )}
+                            title={service.hidden ? "Hidden from Creator. Click to show." : "Visible in Creator. Click to hide."}
+                          >
+                            {service.hidden ? <EyeOff size={14} /> : <Eye size={14} />}
+                          </button>
+                        </td>
+                        <td className="px-5 py-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleServicePin(service.id)}
+                            className={cn(
+                              "p-1.5 rounded-lg transition-all",
+                              (settings.dashboardServiceIds || []).includes(service.id)
+                                ? "text-amber-500 bg-amber-500/10 hover:bg-amber-500/20"
+                                : "text-muted-foreground/35 hover:text-amber-500 hover:bg-muted"
+                            )}
+                            title={(settings.dashboardServiceIds || []).includes(service.id) ? "Featured on Dashboard. Click to remove." : "Feature on Dashboard. Click to add."}
+                          >
+                            <Pin size={14} className={cn((settings.dashboardServiceIds || []).includes(service.id) && "fill-amber-500 text-amber-500")} />
+                          </button>
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <span className="text-xs text-muted-foreground font-semibold">$</span>
+                            <input 
+                              type="number"
+                              defaultValue={service.basePrice}
+                              onBlur={e => handlePriceChange(service.id, e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') {
+                                  handlePriceChange(service.id, (e.target as HTMLInputElement).value);
+                                  (e.target as HTMLInputElement).blur();
+                                }
+                              }}
+                              className="w-20 pl-2 pr-1 py-1 bg-card hover:bg-muted border border-border hover:border-border/80 focus:border-primary rounded-lg text-xs font-bold font-mono text-right outline-none transition-colors"
+                            />
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <button 
+                            type="button"
+                            onClick={() => handleDeleteService(service.id)}
+                            className="p-1.5 text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                            title="Delete Service"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+              {services.length === 0 && (
+                <div className="p-8 text-center text-xs text-muted-foreground font-semibold italic">
+                  No services found. Add digital services utilizing the form above!
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

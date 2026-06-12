@@ -22,9 +22,8 @@ service cloud.firestore {
       return isMasterAdmin() || exists(/databases/$(database)/documents/admins/$(request.auth.uid)); 
     }
 
-    // Fetch user profile status
     function getUserStatus(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data.status;
+      return exists(/databases/$(database)/documents/users/$(userId)) ? get(/databases/$(database)/documents/users/$(userId)).data.status : 'missing';
     }
 
     function isActive() {

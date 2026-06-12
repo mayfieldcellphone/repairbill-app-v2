@@ -202,35 +202,102 @@ async function startServer() {
     }
 
     try {
-      const response = await ai_client.models.generateContent({
-        model: "gemini-3.5-flash", 
-        contents: text,
-        config: {
-          systemInstruction: "You are an expert customer intake technician for a device repair shop (smartphones, laptops, consoles). Your sole job is to parse unstructured chat messages, dictations, or voice transcripts and return clean, structured JSON output matching the target schema.",
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              customerName: { type: Type.STRING, description: "Customer's name. Use 'Walk-in Customer' if absent." },
-              deviceBrand: { type: Type.STRING, description: "Device brand. Capitalize cleanly (e.g., Apple, Samsung, Nintendo)." },
-              deviceModel: { type: Type.STRING, description: "Device model name (e.g., iPhone 15 Pro, Switch OLED, MacBook Air 13 M2)." },
-              issueDescription: { type: Type.STRING, description: "Unbiased technical summary of the complaint or issue." },
-              repairService: { type: Type.STRING, description: "Primary service name (e.g. Screen Replacement, Battery Repair, Liquid Damage Assessment)." },
-              priceEstimation: { type: Type.NUMBER, description: "Anticipated or suggested price value as a clean float. Default to 0 if not mentioned." },
-              requiresFollowUp: { type: Type.BOOLEAN, description: "Set true if water damage, motherboard, or complex troubleshooting is required, otherwise false." }
-            },
-            required: [
-              "customerName", 
-              "deviceBrand", 
-              "deviceModel", 
-              "issueDescription", 
-              "repairService", 
-              "priceEstimation", 
-              "requiresFollowUp"
-            ]
+      let response;
+      try {
+        response = await ai_client.models.generateContent({
+          model: "gemini-3.5-flash", 
+          contents: text,
+          config: {
+            systemInstruction: "You are an expert customer intake technician for a device repair shop (smartphones, laptops, consoles). Your sole job is to parse unstructured chat messages, dictations, or voice transcripts and return clean, structured JSON output matching the target schema.",
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                customerName: { type: Type.STRING, description: "Customer's name. Use 'Walk-in Customer' if absent." },
+                deviceBrand: { type: Type.STRING, description: "Device brand. Capitalize cleanly (e.g., Apple, Samsung, Nintendo)." },
+                deviceModel: { type: Type.STRING, description: "Device model name (e.g., iPhone 15 Pro, Switch OLED, MacBook Air 13 M2)." },
+                issueDescription: { type: Type.STRING, description: "Unbiased technical summary of the complaint or issue." },
+                repairService: { type: Type.STRING, description: "Primary service name (e.g. Screen Replacement, Battery Repair, Liquid Damage Assessment)." },
+                priceEstimation: { type: Type.NUMBER, description: "Anticipated or suggested price value as a clean float. Default to 0 if not mentioned." },
+                requiresFollowUp: { type: Type.BOOLEAN, description: "Set true if water damage, motherboard, or complex troubleshooting is required, otherwise false." }
+              },
+              required: [
+                "customerName", 
+                "deviceBrand", 
+                "deviceModel", 
+                "issueDescription", 
+                "repairService", 
+                "priceEstimation", 
+                "requiresFollowUp"
+              ]
+            }
           }
+        });
+      } catch (firstError: any) {
+        console.warn("[Intake Agent First-Attempt Error, Retrying with gemini-2.5-flash]:", firstError.message);
+        try {
+          response = await ai_client.models.generateContent({
+            model: "gemini-2.5-flash", 
+            contents: text,
+            config: {
+              systemInstruction: "You are an expert customer intake technician for a device repair shop (smartphones, laptops, consoles). Your sole job is to parse unstructured chat messages, dictations, or voice transcripts and return clean, structured JSON output matching the target schema.",
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  customerName: { type: Type.STRING, description: "Customer's name. Use 'Walk-in Customer' if absent." },
+                  deviceBrand: { type: Type.STRING, description: "Device brand. Capitalize cleanly (e.g., Apple, Samsung, Nintendo)." },
+                  deviceModel: { type: Type.STRING, description: "Device model name (e.g., iPhone 15 Pro, Switch OLED, MacBook Air 13 M2)." },
+                  issueDescription: { type: Type.STRING, description: "Unbiased technical summary of the complaint or issue." },
+                  repairService: { type: Type.STRING, description: "Primary service name (e.g. Screen Replacement, Battery Repair, Liquid Damage Assessment)." },
+                  priceEstimation: { type: Type.NUMBER, description: "Anticipated or suggested price value as a clean float. Default to 0 if not mentioned." },
+                  requiresFollowUp: { type: Type.BOOLEAN, description: "Set true if water damage, motherboard, or complex troubleshooting is required, otherwise false." }
+                },
+                required: [
+                  "customerName", 
+                  "deviceBrand", 
+                  "deviceModel", 
+                  "issueDescription", 
+                  "repairService", 
+                  "priceEstimation", 
+                  "requiresFollowUp"
+                ]
+              }
+            }
+          });
+        } catch (secondError: any) {
+          console.warn("[Intake Agent Second-Attempt Error, Retrying with gemini-1.5-flash]:", secondError.message);
+          response = await ai_client.models.generateContent({
+            model: "gemini-1.5-flash", 
+            contents: text,
+            config: {
+              systemInstruction: "You are an expert customer intake technician for a device repair shop (smartphones, laptops, consoles). Your sole job is to parse unstructured chat messages, dictations, or voice transcripts and return clean, structured JSON output matching the target schema.",
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  customerName: { type: Type.STRING, description: "Customer's name. Use 'Walk-in Customer' if absent." },
+                  deviceBrand: { type: Type.STRING, description: "Device brand. Capitalize cleanly (e.g., Apple, Samsung, Nintendo)." },
+                  deviceModel: { type: Type.STRING, description: "Device model name (e.g., iPhone 15 Pro, Switch OLED, MacBook Air 13 M2)." },
+                  issueDescription: { type: Type.STRING, description: "Unbiased technical summary of the complaint or issue." },
+                  repairService: { type: Type.STRING, description: "Primary service name (e.g. Screen Replacement, Battery Repair, Liquid Damage Assessment)." },
+                  priceEstimation: { type: Type.NUMBER, description: "Anticipated or suggested price value as a clean float. Default to 0 if not mentioned." },
+                  requiresFollowUp: { type: Type.BOOLEAN, description: "Set true if water damage, motherboard, or complex troubleshooting is required, otherwise false." }
+                },
+                required: [
+                  "customerName", 
+                  "deviceBrand", 
+                  "deviceModel", 
+                  "issueDescription", 
+                  "repairService", 
+                  "priceEstimation", 
+                  "requiresFollowUp"
+                ]
+              }
+            }
+          });
         }
-      });
+      }
 
       const jsonOutput = JSON.parse(response.text || "{}");
       res.json({ success: true, data: jsonOutput });
@@ -302,76 +369,150 @@ async function startServer() {
         : "No leads found.";
 
       // Use gemini-3.5-flash as default, or fallback to user settings
-      let modelName = settings?.geminiModel || "gemini-3.5-flash";
+      let modelName = (settings?.geminiModel || "gemini-3.5-flash").trim();
 
-      // Map legacy or deprecated model names to modern, supported versions automatically
+      // Strip common prefixes like 'publishers/google/models/' or 'models/'
+      if (modelName.startsWith("publishers/google/models/")) {
+        modelName = modelName.substring("publishers/google/models/".length);
+      }
+      if (modelName.startsWith("models/")) {
+        modelName = modelName.substring("models/".length);
+      }
+
+      // Map any custom or legacy model names to modern, supported versions automatically
       if (
-        modelName === "gemini-1.5-flash" ||
-        modelName === "gemini-2.0-flash" ||
-        modelName === "gemini-3-flash-preview" ||
-        modelName === "gemini-3-flash" ||
-        !modelName
+        !modelName ||
+        modelName.includes("1.5-flash") ||
+        modelName.includes("2.0-flash") ||
+        modelName.includes("3-flash") ||
+        modelName.includes("3.1-flash-lite") ||
+        modelName.includes("3.5-flash")
       ) {
         modelName = "gemini-3.5-flash";
       } else if (
-        modelName === "gemini-1.5-pro" ||
-        modelName === "gemini-2.0-pro" ||
-        modelName === "gemini-3-pro"
+        modelName.includes("1.5-pro") ||
+        modelName.includes("2.0-pro") ||
+        modelName.includes("3-pro") ||
+        modelName.includes("3.1-pro")
       ) {
         modelName = "gemini-3.1-pro-preview";
+      } else {
+        // Safe default fallback
+        modelName = "gemini-3.5-flash";
       }
 
-      const response = await assistant_ai.models.generateContent({
-        model: modelName,
-        contents: prompt,
-        config: {
-          systemInstruction: `You are an advanced AI business assistant for RepairBill Studio.
-          You process technical dictations into structured business actions and provide insights.
+      let response;
+      try {
+        response = await assistant_ai.models.generateContent({
+          model: modelName,
+          contents: prompt,
+          config: {
+            systemInstruction: `You are an advanced AI business assistant for RepairBill Studio.
+            You process technical dictations into structured business actions and provide insights.
 
-          CONTEXT:
-          - Current Date: ${new Date().toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          - ISO Today: ${new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + String(new Date().getDate()).padStart(2, '0')}
-          - Currency: AUD
-          - Tax Rate: ${settings?.taxRate || 10}%
-          - Existing Brands: ${(brands || []).map((b: any) => b.name).join(", ")}
+            CONTEXT:
+            - Current Date: ${new Date().toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            - ISO Today: ${new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + String(new Date().getDate()).padStart(2, '0')}
+            - Currency: AUD
+            - Tax Rate: ${settings?.taxRate || 10}%
+            - Existing Brands: ${(brands || []).map((b: any) => b.name).join(", ")}
 
-          ${invoicesContext}
-          ${expensesContext}
-          ${leadsContext}
+            ${invoicesContext}
+            ${expensesContext}
+            ${leadsContext}
 
-          CAPABILITIES:
-          1. MULTI-ACTION HANDLING: You can process complex, multi-sentence instructions in a single turn.
-             Example: "Create an invoice for John for $100 today, and log a $50 expense for last Tuesday rent."
-             In this case, call BOTH tools.
+            CAPABILITIES:
+            1. MULTI-ACTION HANDLING: You can process complex, multi-sentence instructions in a single turn.
+               Example: "Create an invoice for John for $100 today, and log a $50 expense for last Tuesday rent."
+               In this case, call BOTH tools.
 
-          2. MIXED DATE RESOLUTION: Always accurately resolve relative dates.
-             - "Yesterday" = ${new Date(Date.now() - 86400000).getFullYear() + '-' + String(new Date(Date.now() - 86400000).getMonth() + 1).padStart(2, '0') + '-' + String(new Date(Date.now() - 86400000).getDate()).padStart(2, '0')}
-             - "Last Month" (general) = The month before ${new Date().toLocaleDateString('en-AU', { month: 'long' })}
-             - If a user says "last month rent", set the date to the 1st of the previous month unless specified otherwise.
-             - "This month bill" = Current month (${new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0')}-01 or current day).
+            2. MIXED DATE RESOLUTION: Always accurately resolve relative dates.
+               - "Yesterday" = ${new Date(Date.now() - 86400000).getFullYear() + '-' + String(new Date(Date.now() - 86400000).getMonth() + 1).padStart(2, '0') + '-' + String(new Date(Date.now() - 86400000).getDate()).padStart(2, '0')}
+               - "Last Month" (general) = The month before ${new Date().toLocaleDateString('en-AU', { month: 'long' })}
+               - If a user says "last month rent", set the date to the 1st of the previous month unless specified otherwise.
+               - "This month bill" = Current month (${new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0')}-01 or current day).
 
-          3. BULK OPERATIONS: If the user says "add 3 invoices for today", generate 3 separate tool calls.
+            3. BULK OPERATIONS: If the user says "add 3 invoices for today", generate 3 separate tool calls.
 
-          4. CATALOG MANAGEMENT: You can add and REMOVE items.
-             Example: "Stop supporting Huawei" -> action: 'remove_brand', brandName: 'Huawei'.
-             Example: "Add iPhone 16 to Apple" -> action: 'add_model', brandName: 'Apple', modelName: 'iPhone 16'.
+            4. CATALOG MANAGEMENT: You can add and REMOVE items.
+               Example: "Stop supporting Huawei" -> action: 'remove_brand', brandName: 'Huawei'.
+               Example: "Add iPhone 16 to Apple" -> action: 'add_model', brandName: 'Apple', modelName: 'iPhone 16'.
 
-          TOOLS:
-          - createInvoice: For sales/quotes.
-          - createExpense: For outgoings/bills.
-          - updateCatalog: For inventory/brands/models.
+            TOOLS:
+            - createInvoice: For sales/quotes.
+            - createExpense: For outgoings/bills.
+            - updateCatalog: For inventory/brands/models.
 
-          DATA INTEGRITY:
-          - Extract exact prices.
-          - Default Customer: "Walk-in Customer".
-          - Default Supplier: "Generic Supplier".
+            DATA INTEGRITY:
+            - Extract exact prices.
+            - Default Customer: "Walk-in Customer".
+            - Default Supplier: "Generic Supplier".
 
-          Tone: Professional, efficient shop manager.`,
-          tools: [{ functionDeclarations: [createInvoiceTool, createExpenseTool, updateCatalogTool] }],
+            Tone: Professional, efficient shop manager.`,
+            tools: [{ functionDeclarations: [createInvoiceTool, createExpenseTool, updateCatalogTool] }],
+          }
+        });
+      } catch (firstError: any) {
+        console.warn("[Assistant AI First-Attempt Error, Retrying with gemini-2.5-flash]:", firstError.message);
+        response = await assistant_ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: prompt,
+          config: {
+            systemInstruction: `You are an advanced AI business assistant for RepairBill Studio.
+            You process technical dictations into structured business actions and provide insights.
+
+            CONTEXT:
+            - Current Date: ${new Date().toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            - ISO Today: ${new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + String(new Date().getDate()).padStart(2, '0')}
+            - Currency: AUD
+            - Tax Rate: ${settings?.taxRate || 10}%
+            - Existing Brands: ${(brands || []).map((b: any) => b.name).join(", ")}
+
+            ${invoicesContext}
+            ${expensesContext}
+            ${leadsContext}
+
+            CAPABILITIES:
+            1. MULTI-ACTION HANDLING: You can process complex, multi-sentence instructions in a single turn.
+               Example: "Create an invoice for John for $100 today, and log a $50 expense for last Tuesday rent."
+               In this case, call BOTH tools.
+
+            2. MIXED DATE RESOLUTION: Always accurately resolve relative dates.
+               - "Yesterday" = ${new Date(Date.now() - 86400000).getFullYear() + '-' + String(new Date(Date.now() - 86400000).getMonth() + 1).padStart(2, '0') + '-' + String(new Date(Date.now() - 86400000).getDate()).padStart(2, '0')}
+               - "Last Month" (general) = The month before ${new Date().toLocaleDateString('en-AU', { month: 'long' })}
+               - If a user says "last month rent", set the date to the 1st of the previous month unless specified otherwise.
+               - "This month bill" = Current month (${new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0')}-01 or current day).
+
+            3. BULK OPERATIONS: If the user says "add 3 invoices for today", generate 3 separate tool calls.
+
+            4. CATALOG MANAGEMENT: You can add and REMOVE items.
+               Example: "Stop supporting Huawei" -> action: 'remove_brand', brandName: 'Huawei'.
+               Example: "Add iPhone 16 to Apple" -> action: 'add_model', brandName: 'Apple', modelName: 'iPhone 16'.
+
+            TOOLS:
+            - createInvoice: For sales/quotes.
+            - createExpense: For outgoings/bills.
+            - updateCatalog: For inventory/brands/models.
+
+            DATA INTEGRITY:
+            - Extract exact prices.
+            - Default Customer: "Walk-in Customer".
+            - Default Supplier: "Generic Supplier".
+
+            Tone: Professional, efficient shop manager.`,
+            tools: [{ functionDeclarations: [createInvoiceTool, createExpenseTool, updateCatalogTool] }],
+          }
+        });
+      }
+
+      res.json({ 
+        success: true, 
+        response: {
+          candidates: response.candidates,
+          text: response.text,
+          functionCalls: response.functionCalls
         }
       });
-
-      res.json({ success: true, response });
     } catch (error: any) {
       console.error("[Assistant API Error]:", error);
       res.status(500).json({
