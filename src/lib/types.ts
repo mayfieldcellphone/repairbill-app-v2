@@ -96,6 +96,13 @@ export interface InvoiceItem {
   quantity: number;
 }
 
+export interface ServiceSetupBundle {
+  id: string;
+  name: string;
+  serviceIds: string[];
+  category?: string;
+}
+
 export interface InvoiceSettings {
   companyName: string;
   address: string;
@@ -122,6 +129,7 @@ export interface InvoiceSettings {
   creationFlowOrder?: 'brand-first' | 'service-first';
   dashboardServiceIds?: string[];
   dashboardBrandIds?: string[];
+  dashboardSetups?: ServiceSetupBundle[];
   aiProvider?: 'gemini' | 'openai';
   geminiApiKey?: string;
   geminiModel?: string;

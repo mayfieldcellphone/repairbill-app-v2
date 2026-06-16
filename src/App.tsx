@@ -306,6 +306,7 @@ export default function App() {
   const [creatorType, setCreatorType] = useState<'invoice' | 'estimate'>('invoice');
   const [presetBrandName, setPresetBrandName] = useState<string | undefined>(undefined);
   const [presetServiceName, setPresetServiceName] = useState<string | undefined>(undefined);
+  const [presetServiceIds, setPresetServiceIds] = useState<string[] | undefined>(undefined);
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [brands, setBrands] = useState<Brand[]>(() => getBrandCatalog());
@@ -1064,6 +1065,14 @@ export default function App() {
                   onCatalogUpdate={handleCatalogUpdate}
                   services={services}
                   onServicesUpdate={handleServicesUpdate}
+                  settings={settings}
+                  onSettingsUpdate={handleSettingsUpdate}
+                  onServicesSelectedForInvoice={(selectedIds) => {
+                    setPresetServiceIds(selectedIds);
+                    setCreatorType('invoice');
+                    setActiveTab('invoices');
+                    setShowCreator(true);
+                  }}
                 />
               </motion.div>
             ) : activeTab === 'import' ? (
@@ -1231,16 +1240,19 @@ export default function App() {
                       onServicesUpdate={handleServicesUpdate}
                       initialBrandName={presetBrandName}
                       initialServiceName={presetServiceName}
+                      initialServiceIds={presetServiceIds}
                       onClose={() => {
                         setShowCreator(false);
                         setEditingInvoice(null);
                         setPresetBrandName(undefined);
                         setPresetServiceName(undefined);
+                        setPresetServiceIds(undefined);
                       }}
                       onInvoiceCreated={(newInvoice) => {
                         handleInvoiceCreated(newInvoice);
                         setPresetBrandName(undefined);
                         setPresetServiceName(undefined);
+                        setPresetServiceIds(undefined);
                       }}
                     />
                   </div>

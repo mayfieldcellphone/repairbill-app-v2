@@ -164,8 +164,6 @@ export function SettingsView({ settings, setSettings, onBrandsReordered, onCatal
                   { id: 'branding', icon: Palette, label: 'Identity' },
                   { id: 'templates', icon: FileText, label: 'Layouts' },
                   { id: 'business', icon: Building2, label: 'Profile' },
-                  { id: 'catalog', icon: Smartphone, label: 'Catalog' },
-                  { id: 'dashboard', icon: TrendingUp, label: 'Dashboard' },
                   { id: 'financial', icon: CreditCard, label: 'Finance' },
                   { id: 'integration', icon: Zap, label: 'Website' },
                   { id: 'ai-voice', icon: Cpu, label: 'AI Voice' },
@@ -464,21 +462,6 @@ export function SettingsView({ settings, setSettings, onBrandsReordered, onCatal
                   />
                 </div>
               </div>
-            </TabsContent>
-
-            <TabsContent value="catalog" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2">
-              <CatalogManager 
-                settings={localSettings} 
-                setSettings={setLocalSettings}
-                onBrandsReordered={onBrandsReordered} 
-                onCatalogUpdate={onCatalogUpdate}
-                services={services}
-                onServicesUpdate={onServicesUpdate}
-              />
-            </TabsContent>
-
-            <TabsContent value="dashboard" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2">
-              <DashboardManager settings={localSettings} setSettings={setLocalSettings} />
             </TabsContent>
 
             <TabsContent value="financial" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2">
@@ -785,6 +768,9 @@ fetch("${window.location.origin}/api/web-integration/leads", {
                         />
                         <p className="text-[10px] text-muted-foreground font-medium italic">
                           If omitted, the default system Gemini API endpoint will be leveraged.
+                        </p>
+                        <p className="text-[10px] text-blue-500 font-semibold italic mt-1 leading-relaxed">
+                          ✨ Fixed: If your custom API key is suspended or encounters a 403 authorization block, the assistant now automatically falls back to our robust system-provided API key so your copilot never fails! Or, you can clear this input field to use the built-in system key by default.
                         </p>
                       </div>
 

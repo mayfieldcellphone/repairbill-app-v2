@@ -3,17 +3,20 @@ import { REPAIR_SERVICES as STATIC_SERVICES, getSavedServices } from '../lib/ser
 import { saveCustomBrand, saveCustomModel, getBrandCatalog } from '../lib/deviceStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Search, ChevronRight, Laptop, Smartphone, Watch, Tablet, Download, Upload, Trash2, CheckCircle2, X, Plus, ChevronUp, ChevronDown, Eye, EyeOff, GripVertical } from 'lucide-react';
+import { Search, ChevronRight, Laptop, Smartphone, Watch, Tablet, Download, Upload, Trash2, CheckCircle2, X, Plus, ChevronUp, ChevronDown, Eye, EyeOff, GripVertical, Pin, Receipt, Sparkles, Play, Layers } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { cn } from '@/lib/utils';
-import { Brand, RepairService } from '../lib/types';
+import { Brand, RepairService, InvoiceSettings } from '../lib/types';
 import { motion, AnimatePresence } from 'motion/react';
 
 export function CatalogView({ 
   brands, 
   onCatalogUpdate,
   services: initialServices,
-  onServicesUpdate
+  onServicesUpdate,
+  settings,
+  onSettingsUpdate,
+  onServicesSelectedForInvoice
 }: { 
   brands: Brand[], 
   onCatalogUpdate?: (data: { 
@@ -23,15 +26,74 @@ export function CatalogView({
     updatedBrand?: Brand
   }) => void,
   services?: RepairService[],
-  onServicesUpdate?: (services: RepairService[], deletedId?: string) => void
+  onServicesUpdate?: (services: RepairService[], deletedId?: string) => void,
+  settings?: InvoiceSettings,
+  onSettingsUpdate?: (settings: InvoiceSettings) => void,
+  onServicesSelectedForInvoice?: (serviceIds: string[]) => void
 }) {
   const [selectedBrandId, setSelectedBrandId] = useState(brands[0]?.id || '');
   const selectedBrand = brands.find(b => b.id === (selectedBrandId || brands[0]?.id)) || brands[0];
   const [searchTerm, setSearchTerm] = useState('');
   const [newModelNames, setNewModelNames] = useState<Record<string, string>>({});
-  const [view, setView] = useState<'devices' | 'services'>('devices');
+  const [view, setView] = useState<'devices' | 'services' | 'setups'>('devices');
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [showSaveSetupModal, setShowSaveSetupModal] = useState(false);
+  const [newSetupName, setNewSetupName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSaveSetup = () => {
+    if (!newSetupName.trim() || selectedServices.length === 0 || !onSettingsUpdate || !settings) return;
+    const trimmed = newSetupName.trim();
+    const currentSetups = settings.dashboardSetups || [];
+    const newSetup = {
+      id: Math.random().toString(36).substring(2, 9),
+      name: trimmed,
+      serviceIds: [...selectedServices]
+    };
+    onSettingsUpdate({
+      ...settings,
+      dashboardSetups: [...currentSetups, newSetup]
+    });
+    setNewSetupName('');
+    setSelectedServices([]);
+    setShowSaveSetupModal(false);
+    setView('setups');
+  };
+
+  const handleDeleteSetup = (setupId: string) => {
+    if (!onSettingsUpdate || !settings) return;
+    const currentSetups = settings.dashboardSetups || [];
+    onSettingsUpdate({
+      ...settings,
+      dashboardSetups: currentSetups.filter(s => s.id !== setupId)
+    });
+  };
+
+  const handleToggleBrandPin = (brandId: string) => {
+    if (!onSettingsUpdate || !settings) return;
+    const currentList = settings.dashboardBrandIds || [];
+    const isActive = currentList.includes(brandId);
+    let newList;
+    if (isActive) {
+      newList = currentList.filter(id => id !== brandId);
+    } else {
+      newList = [...currentList, brandId];
+    }
+    onSettingsUpdate({ ...settings, dashboardBrandIds: newList });
+  };
+
+  const handleToggleServicePin = (serviceId: string) => {
+    if (!onSettingsUpdate || !settings) return;
+    const currentList = settings.dashboardServiceIds || [];
+    const isActive = currentList.includes(serviceId);
+    let newList;
+    if (isActive) {
+      newList = currentList.filter(id => id !== serviceId);
+    } else {
+      newList = [...currentList, serviceId];
+    }
+    onSettingsUpdate({ ...settings, dashboardServiceIds: newList });
+  };
   
   const [servicesLocal, setServicesLocal] = useState<RepairService[]>(() => {
     return getSavedServices();
@@ -479,12 +541,80 @@ export function CatalogView({
             </motion.div>
           </div>
         )}
+
+        {showSaveSetupModal && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full border border-slate-100 shadow-2xl relative"
+            >
+              <button 
+                onClick={() => setShowSaveSetupModal(false)}
+                className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-2 hover:bg-slate-50 rounded-xl"
+              >
+                <X size={18} />
+              </button>
+              
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500">
+                    <Pin size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest leading-none">Save Invoice Setup</h3>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-none mt-1">Bundle {selectedServices.length} selected services together</p>
+                  </div>
+                </div>
+                
+                <div className="text-xs bg-slate-50 border border-slate-100 p-3 rounded-2xl max-h-36 overflow-y-auto space-y-1 custom-scrollbar">
+                  <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1">Included services:</p>
+                  {selectedServices.map(sid => {
+                    const srv = services.find(s => s.id === sid);
+                    return srv ? (
+                      <div key={sid} className="flex justify-between text-slate-700 font-semibold py-0.5 border-b border-secondary/10 last:border-0">
+                        <span className="truncate max-w-[200px]">{srv.name}</span>
+                        <span className="font-mono text-[10px]">${srv.basePrice.toFixed(2)}</span>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Setup Name</label>
+                  <Input 
+                    placeholder="e.g. Software Configuration Bundle, Full Diagnosis Pack" 
+                    value={newSetupName} 
+                    onChange={e => setNewSetupName(e.target.value)}
+                    className="rounded-xl border-slate-200 text-xs"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newSetupName.trim()) handleSaveSetup();
+                    }}
+                  />
+                </div>
+
+                <button 
+                  onClick={handleSaveSetup}
+                  disabled={!newSetupName.trim()}
+                  className="w-full py-4 mt-2 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Save Setup Bundle
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">{view === 'devices' ? 'Product Catalog' : 'Repair Services Catalog'}</h2>
-          <p className="text-sm text-slate-500">{view === 'devices' ? 'Global brand models and device specifications' : 'Manage your repair service price list'}</p>
+          <h2 className="text-2xl font-bold text-slate-800">
+            {view === 'devices' ? 'Product Catalog' : view === 'services' ? 'Repair Services Catalog' : 'Invoice Setups & Launchpad'}
+          </h2>
+          <p className="text-sm text-slate-500">
+            {view === 'devices' ? 'Global brand models and device specifications' : view === 'services' ? 'Manage your repair service price list' : 'Instant invoice shortcuts and custom multi-service setups'}
+          </p>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -501,17 +631,25 @@ export function CatalogView({
             >
               Services
             </button>
+            <button 
+              onClick={() => setView('setups')}
+              className={cn("px-4 py-1.5 rounded-lg text-xs font-bold transition-all", view === 'setups' ? "bg-white shadow-sm text-blue-600" : "text-slate-500")}
+            >
+              Launchpad & Setups
+            </button>
           </div>
 
-          <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <Input 
-              placeholder={`Search ${view}...`} 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 rounded-xl bg-card border-border"
-            />
-          </div>
+          {view !== 'setups' && (
+            <div className="relative flex-1 md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <Input 
+                placeholder={`Search ${view}...`} 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 rounded-xl bg-card border-border"
+              />
+            </div>
+          )}
 
           {view === 'services' && (
             <div className="flex gap-2">
@@ -537,6 +675,29 @@ export function CatalogView({
                     >
                       <Eye size={18} />
                     </button>
+                    {onServicesSelectedForInvoice && (
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => onServicesSelectedForInvoice(selectedServices)}
+                          className="p-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-lg flex items-center gap-2 px-4 whitespace-nowrap border border-indigo-500"
+                          title="Create Invoice with Selected Services"
+                        >
+                          <Receipt size={18} />
+                          <span className="text-xs font-bold uppercase tracking-wider">Create Invoice ({selectedServices.length})</span>
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setNewSetupName('');
+                            setShowSaveSetupModal(true);
+                          }}
+                          className="p-2.5 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition-all shadow-lg flex items-center gap-2 px-4 whitespace-nowrap border border-amber-400"
+                          title="Save Selected Services as a Setup Bundle"
+                        >
+                          <Pin size={18} />
+                          <span className="text-xs font-bold uppercase tracking-wider">Save Setup ({selectedServices.length})</span>
+                        </button>
+                      </div>
+                    )}
                     <button 
                       onClick={deleteSelectedServices}
                       className="p-2.5 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all shadow-lg flex items-center gap-2 px-4 whitespace-nowrap"
@@ -622,7 +783,7 @@ export function CatalogView({
                     <button
                       onClick={() => setSelectedBrandId(brand.id)}
                       className={cn(
-                        "w-full flex items-center justify-between pl-4 pr-10 py-3 rounded-xl text-sm font-medium transition-all text-left",
+                        "w-full flex items-center justify-between pl-4 pr-20 py-3 rounded-xl text-sm font-medium transition-all text-left",
                         selectedBrand.id === brand.id 
                           ? "bg-blue-600 text-white shadow-md shadow-blue-200" 
                           : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-100"
@@ -641,6 +802,22 @@ export function CatalogView({
                         "transition-transform",
                         selectedBrand.id === brand.id ? "rotate-90" : "opacity-0"
                       )} />
+                    </button>
+                    {/* Pin Brand Button (Shortcut to Dashboard) */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleBrandPin(brand.id);
+                      }}
+                      className={cn(
+                        "absolute right-10 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all z-10",
+                        (settings?.dashboardBrandIds || []).includes(brand.id)
+                          ? "text-amber-500 bg-amber-500/10 opacity-100"
+                          : "text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-amber-50 hover:text-amber-600"
+                      )}
+                      title={(settings?.dashboardBrandIds || []).includes(brand.id) ? "Featured on Dashboard. Click to remove." : "Feature on Dashboard. Click to add."}
+                    >
+                      <Pin size={13} className={cn((settings?.dashboardBrandIds || []).includes(brand.id) && "fill-amber-500 text-amber-500")} />
                     </button>
                     {/* Delete Brand Button */}
                     <button
@@ -795,7 +972,7 @@ export function CatalogView({
               )}
             </div>
           </>
-        ) : (
+        ) : view === 'services' ? (
           <div className="lg:col-span-4">
             <Card className="rounded-xl border-slate-200 shadow-sm overflow-hidden bg-white">
               <CardContent className="p-0">
@@ -814,6 +991,7 @@ export function CatalogView({
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Service Name</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Category</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Show?</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Dashboard</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Default Price</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Action</th>
                       </tr>
@@ -880,8 +1058,38 @@ export function CatalogView({
                                           {service.hidden ? <EyeOff size={16} /> : <Eye size={16} />}
                                         </button>
                                       </td>
+                                      <td className="px-6 py-4 text-center">
+                                        <button
+                                          onClick={() => handleToggleServicePin(service.id)}
+                                          className={cn(
+                                            "p-1.5 rounded-lg transition-all",
+                                            (settings?.dashboardServiceIds || []).includes(service.id)
+                                              ? "text-amber-500 bg-amber-500/10 hover:bg-amber-500/20"
+                                              : "text-slate-300 hover:text-amber-500 hover:bg-slate-50"
+                                          )}
+                                          title={(settings?.dashboardServiceIds || []).includes(service.id) ? "Featured on Dashboard" : "Show on Dashboard Pin"}
+                                        >
+                                          <Pin size={16} className={cn((settings?.dashboardServiceIds || []).includes(service.id) && "fill-amber-500 text-amber-500")} />
+                                        </button>
+                                      </td>
                                       <td className="px-6 py-4 text-right">
-                                        <span className="text-sm font-black text-slate-900">${service.basePrice.toFixed(2)}</span>
+                                        <div className="flex items-center justify-end gap-1.5">
+                                          <span className="text-sm text-slate-400 font-bold">$</span>
+                                          <input 
+                                            type="number"
+                                            value={service.basePrice === 0 ? '' : service.basePrice}
+                                            placeholder="0"
+                                            onChange={(e) => {
+                                              const raw = e.target.value;
+                                              const val = raw === '' ? 0 : parseFloat(raw) || 0;
+                                              const updated = services.map(s => 
+                                                s.id === service.id ? { ...s, basePrice: val } : s
+                                              );
+                                              updateServicesList(updated);
+                                            }}
+                                            className="w-24 px-2.5 py-1.5 bg-white border border-slate-200 focus:border-blue-500 rounded-lg text-xs font-bold text-right outline-none transition-colors"
+                                          />
+                                        </div>
                                       </td>
                                       <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-1">
@@ -916,6 +1124,199 @@ export function CatalogView({
                 )}
               </CardContent>
             </Card>
+          </div>
+        ) : (
+          <div className="lg:col-span-4 space-y-8">
+            {/* Quick Service Bundles (Saved Setups) */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-600">
+                  <Layers size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest leading-none">
+                    Saved Service Bundles ({ (settings?.dashboardSetups || []).length })
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Ready-to-use multi-service setups</p>
+                </div>
+              </div>
+
+              {(settings?.dashboardSetups || []).length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {(settings?.dashboardSetups || []).map(setup => {
+                    let totalSetupPrice = 0;
+                    const setupServices = (setup.serviceIds || []).map(id => {
+                      const srv = services.find(s => s.id === id);
+                      if (srv) {
+                        totalSetupPrice += srv.basePrice || 0;
+                      }
+                      return srv;
+                    }).filter(Boolean) as RepairService[];
+
+                    return (
+                      <div key={setup.id} className="bg-white border border-slate-200/85 rounded-2xl p-5 hover:shadow-md hover:border-indigo-500/30 transition-all flex flex-col justify-between group relative">
+                        <button 
+                          onClick={() => handleDeleteSetup(setup.id)}
+                          className="absolute top-4 right-4 p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                          title="Delete Setup Bundle"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+
+                        <div className="space-y-3">
+                          <span className="text-xs font-black text-slate-800 max-w-[85%] block truncate">{setup.name}</span>
+                          <div className="space-y-1.5">
+                            {setupServices.map(srv => (
+                              <div key={srv.id} className="flex justify-between items-center text-[10px] font-semibold text-slate-600">
+                                <span className="truncate max-w-[160px]">{srv.name}</span>
+                                <span className="font-mono text-slate-400 font-bold">${srv.basePrice.toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
+                          <div className="flex flex-col">
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Total Bundle Price</span>
+                            <span className="text-sm font-black text-slate-900 leading-none mt-1.5">${totalSetupPrice.toFixed(2)}</span>
+                          </div>
+                          {onServicesSelectedForInvoice && (
+                            <button 
+                              onClick={() => onServicesSelectedForInvoice(setup.serviceIds)}
+                              className="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center gap-1.5 shadow-sm shadow-indigo-100"
+                            >
+                              <Play size={10} className="fill-white text-white" /> Draft Job
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-12 px-4 border border-dashed border-slate-200 bg-white rounded-2xl flex flex-col items-center justify-center">
+                  <Layers className="text-slate-300 w-10 h-10 mb-3 animate-pulse" />
+                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">No Saved Setup Bundles Yet</p>
+                  <p className="text-[10px] text-slate-400 font-semibold max-w-[280px] mt-1.5 text-center leading-relaxed">
+                    Save frequent combinations (e.g. software setups, diagnostics) in your <span className="text-blue-500 font-bold cursor-pointer underline" onClick={() => setView('services')}>Services tab</span> by selecting multiple checkboxes, then click the orange <span className="bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded font-black font-semibold">Save Setup</span> button at the bottom screen action-bar!
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Launchpad (Pinned Brands) */}
+            <div className="space-y-4 pt-6 border-t border-slate-100/60">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-blue-500/10 rounded-xl text-blue-600">
+                  <Smartphone size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest leading-none">Pinned Manufacturer Brands</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Instant brand-preset manual or smart AI invoice creator</p>
+                </div>
+              </div>
+
+              {(() => {
+                const pinnedBrandIds = settings?.dashboardBrandIds || [];
+                const pinnedBrands = brands.filter(b => pinnedBrandIds.includes(b.id));
+
+                if (pinnedBrands.length === 0) {
+                  return (
+                    <div className="text-center py-8 border border-dashed border-slate-200 bg-white rounded-2xl flex flex-col items-center justify-center p-4">
+                      <Smartphone className="text-slate-300 w-8 h-8 mb-2" />
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">No Brands Featured</p>
+                      <p className="text-[9px] text-slate-400/60 max-w-[220px] mt-1 text-center">Pin manufacturer brands using the <span className="text-amber-500 font-bold cursor-pointer" onClick={() => setView('devices')}>pin icon next to each brand</span> inside Devices tab.</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    {pinnedBrands.map(brand => (
+                      <div key={brand.id} className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col justify-between hover:border-indigo-500/30 transition-all gap-3">
+                        <div>
+                          <span className="text-xs font-black text-slate-800 line-clamp-1">{brand.name}</span>
+                          <p className="text-[8px] text-slate-400 font-bold mt-0.5 uppercase tracking-wide">
+                            {brand.series.reduce((sum, s) => sum + s.models.length, 0)} models catalog
+                          </p>
+                        </div>
+                        <div className="pt-2 border-t border-slate-50">
+                          {onServicesSelectedForInvoice ? (
+                            <button
+                              onClick={() => {
+                                // Since it is brand shortcut, trigger invoice creator for this brand
+                                onServicesSelectedForInvoice([]);
+                              }}
+                              className="w-full py-1.5 bg-slate-50 hover:bg-indigo-600 hover:text-white rounded-lg text-[9px] font-bold text-slate-600 transition-all uppercase tracking-wide flex items-center justify-center gap-1 border border-slate-100"
+                            >
+                              <Receipt size={10} /> Draft Job
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Quick Launchpad (Pinned Services) */}
+            <div className="space-y-4 pt-6 border-t border-slate-100/60">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500">
+                  <Layers size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest leading-none">Pinned Repair Services</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Launch invoice with single-service shortcut</p>
+                </div>
+              </div>
+
+              {(() => {
+                const pinnedServiceIds = settings?.dashboardServiceIds || [];
+                const pinnedServices = services.filter(s => pinnedServiceIds.includes(s.id));
+
+                if (pinnedServices.length === 0) {
+                  return (
+                    <div className="text-center py-8 border border-dashed border-slate-200 bg-white rounded-2xl flex flex-col items-center justify-center p-4">
+                      <Layers className="text-slate-300 w-8 h-8 mb-2" />
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">No Services Featured</p>
+                      <p className="text-[9px] text-slate-400/60 max-w-[220px] mt-1 text-center">Pin favorite standard services using the <span className="text-amber-500 font-bold cursor-pointer" onClick={() => setView('services')}>pin icon column</span> inside Services tab.</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {pinnedServices.map(service => (
+                      <div key={service.id} className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col justify-between hover:border-indigo-500/30 transition-all gap-3">
+                        <div>
+                          <span className="text-xs font-black text-slate-800 line-clamp-1">{service.name}</span>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-[8px] font-black uppercase text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded">
+                              {service.category}
+                            </span>
+                            <span className="font-mono text-[10px] font-black text-slate-600">
+                              ${service.basePrice.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="pt-2 border-t border-slate-50">
+                          {onServicesSelectedForInvoice && (
+                            <button
+                              onClick={() => onServicesSelectedForInvoice([service.id])}
+                              className="w-full py-1.5 bg-slate-50 hover:bg-indigo-600 hover:text-white rounded-lg text-[9px] font-bold text-slate-600 transition-all uppercase tracking-wide flex items-center justify-center gap-1 border border-slate-100"
+                            >
+                              <Receipt size={10} /> Draft Job
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         )}
       </div>

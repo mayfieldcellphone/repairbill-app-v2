@@ -38,7 +38,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { InvoiceTemplate } from './InvoiceTemplate';
 import { generatePDF, printInvoice, shareInvoice } from '../lib/invoiceUtils';
 
-export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onClose, nextInvoiceNumber, initialType = 'invoice', brands: initialBrands, onCatalogUpdate, services: initialServices, onServicesUpdate, initialBrandName, initialServiceName }: { 
+export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onClose, nextInvoiceNumber, initialType = 'invoice', brands: initialBrands, onCatalogUpdate, services: initialServices, onServicesUpdate, initialBrandName, initialServiceName, initialServiceIds }: { 
   settings: InvoiceSettings,
   onInvoiceCreated: (invoice: Invoice) => void,
   invoiceToEdit?: Invoice | null,
@@ -50,7 +50,8 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
   services?: RepairService[],
   onServicesUpdate?: (services: RepairService[], deletedId?: string) => void,
   initialBrandName?: string,
-  initialServiceName?: string
+  initialServiceName?: string,
+  initialServiceIds?: string[]
 }) {
   const theme = settings.appTheme;
   const [step, setStep] = useState(1);
@@ -170,6 +171,38 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
       }
     }
   }, [initialServiceName, selectedBrand, selectedModel, services, invoiceToEdit]);
+
+  // Auto-add multiple preset services if provided
+  useEffect(() => {
+    if (initialServiceIds && initialServiceIds.length > 0 && selectedBrand && selectedModel && invoiceItems.length === 0 && !invoiceToEdit) {
+      const savedPricesRaw = localStorage.getItem('honeybill_service_prices');
+      const sPrices = savedPricesRaw ? JSON.parse(savedPricesRaw) : {};
+      
+      const newItems: InvoiceItem[] = [];
+      initialServiceIds.forEach(id => {
+        const srv = services.find(s => s.id === id);
+        if (srv) {
+          const initialPrice = sPrices[srv.id] || srv.basePrice || 0;
+          newItems.push({
+            id: Math.random().toString(36).substr(2, 9),
+            serviceId: srv.id,
+            brandName: selectedBrand.name,
+            modelName: selectedModel.name,
+            serviceName: srv.name,
+            price: initialPrice,
+            quantity: 1,
+          });
+        }
+      });
+      
+      if (newItems.length > 0) {
+        setInvoiceItems(newItems);
+        setHistory([newItems]);
+        setHistoryIndex(0);
+        setStep(2);
+      }
+    }
+  }, [initialServiceIds, selectedBrand, selectedModel, services, invoiceToEdit]);
 
   const handleUpdateServices = (updated: RepairService[], deletedId?: string) => {
     if (onServicesUpdate) {

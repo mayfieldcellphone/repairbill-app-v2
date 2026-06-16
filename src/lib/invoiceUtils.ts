@@ -13,15 +13,14 @@ export const generatePDF = async (elementId: string, filename: string) => {
       throw new Error(`Element with id ${elementId} not found`);
     }
 
-    // Create a temporary stable offscreen container to layout the invoice perfectly
+    // Create a temporary stable container positioned above the viewport to layout the invoice perfectly
     const container = document.createElement('div');
-    container.style.position = 'fixed';
-    container.style.top = '0';
+    container.style.position = 'absolute';
+    container.style.top = '-9999px';
     container.style.left = '0';
     container.style.width = '800px';
     container.style.backgroundColor = '#ffffff';
-    container.style.zIndex = '-100000';
-    container.style.pointerEvents = 'none';
+    container.style.zIndex = '999999';
 
     // Clone the target element
     const clonedElement = element.cloneNode(true) as HTMLElement;
@@ -38,16 +37,32 @@ export const generatePDF = async (elementId: string, filename: string) => {
     document.body.appendChild(container);
 
     // Wait for the clone to layout fully
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
-    const canvas = await html2canvas(clonedElement, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#ffffff',
-      windowWidth: 800,
-      windowHeight: clonedElement.scrollHeight || 1200
-    });
+    let canvas;
+    try {
+      canvas = await html2canvas(clonedElement, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: 800,
+        windowHeight: clonedElement.scrollHeight || 1200
+      });
+    } catch (err) {
+      console.warn("CORS or html2canvas generation error, retrying without external images...", err);
+      // Strip images from clone to bypass cross-origin / tainted canvas issues
+      const imgs = clonedElement.querySelectorAll('img');
+      imgs.forEach(img => img.remove());
+      canvas = await html2canvas(clonedElement, {
+        scale: 2,
+        useCORS: false,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: 800,
+        windowHeight: clonedElement.scrollHeight || 1200
+      });
+    }
 
     // Remove the temporary container
     document.body.removeChild(container);
@@ -81,92 +96,29 @@ export const printInvoice = (elementId: string) => {
   const element = document.getElementById(elementId);
   if (!element) return;
 
-  const iframe = document.createElement('iframe');
-  iframe.style.position = 'fixed';
-  iframe.style.right = '0';
-  iframe.style.bottom = '0';
-  iframe.style.width = '0';
-  iframe.style.height = '0';
-  iframe.style.border = '0';
-  document.body.appendChild(iframe);
-
-  // Use outerHTML so we copy the container with classes and id!
-  const content = element.outerHTML;
-  const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-    .map(s => s.outerHTML)
-    .join('');
-
-  const iframeDoc = iframe.contentWindow?.document;
-  if (!iframeDoc) {
-    document.body.removeChild(iframe);
-    return window.open('', '_blank')?.document.write(content); // fallback
+  // Check if print-section already exists, remove it
+  let printSection = document.getElementById('print-section');
+  if (printSection) {
+    printSection.remove();
   }
 
-  iframeDoc.open();
-  iframeDoc.write(`
-    <html>
-      <head>
-        <title>Print Invoice</title>
-        ${styles}
-        <style>
-          @page {
-            size: auto;
-            margin: 15mm 15mm 15mm 15mm;
-          }
-          body { 
-            background: #ffffff !important; 
-            color: #0f172a !important;
-            -webkit-print-color-adjust: exact !important; 
-            print-color-adjust: exact !important;
-            margin: 0; 
-            padding: 0;
-            font-family: ui-sans-serif, system-ui, sans-serif;
-          }
-          .no-print { display: none !important; }
-          
-          /* Force standard color print and layout rules */
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            box-sizing: border-box;
-          }
-          
-          /* Prevent row splitting across pages */
-          tr, .grid > div, .space-y-4 > div {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
-          
-          /* Keep elements full-width and remove visual noises */
-          [id^="printable-invoice-"], [id^="ai-printable-"] {
-            width: 100% !important;
-            max-width: 100% !important;
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            background: transparent !important;
-          }
-        </style>
-      </head>
-      <body>
-        <div style="width: 100%;">
-          ${content}
-        </div>
-        <script>
-          setTimeout(() => {
-            window.focus();
-            window.print();
-          }, 600);
-        </script>
-      </body>
-    </html>
-  `);
-  iframeDoc.close();
+  // Create a new print-section div
+  printSection = document.createElement('div');
+  printSection.id = 'print-section';
+  printSection.innerHTML = element.innerHTML;
+  
+  // Copy relevant classes from the parent element to keep custom styled borders/paddings if any
+  printSection.className = element.className;
+  
+  document.body.appendChild(printSection);
 
+  // Trigger window print
+  window.print();
+
+  // Clean up printSection shortly after print dialog closes
   setTimeout(() => {
-    document.body.removeChild(iframe);
-  }, 5000);
+    printSection?.remove();
+  }, 1000);
 };
 
 export const shareInvoice = async (invoice: Invoice, settings: InvoiceSettings) => {
