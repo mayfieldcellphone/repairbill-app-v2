@@ -31,7 +31,8 @@ import {
   Calendar,
   Sparkles,
   Eye,
-  EyeOff
+  EyeOff,
+  Pencil
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -483,6 +484,9 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
   const [editingItem, setEditingItem] = useState<InvoiceItem | null>(null);
   const [editPriceInput, setEditPriceInput] = useState<string>('');
   const [editQuantityInput, setEditQuantityInput] = useState<string>('');
+  const [editServiceNameInput, setEditServiceNameInput] = useState<string>('');
+  const [editBrandNameInput, setEditBrandNameInput] = useState<string>('');
+  const [editModelNameInput, setEditModelNameInput] = useState<string>('');
 
   // Price persistence and entry state
   const [serviceToPrice, setServiceToPrice] = useState<RepairService | null>(null);
@@ -525,6 +529,9 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
     setEditingItem(item);
     setEditPriceInput(item.price.toString());
     setEditQuantityInput(item.quantity.toString());
+    setEditServiceNameInput(item.serviceName);
+    setEditBrandNameInput(item.brandName);
+    setEditModelNameInput(item.modelName);
   };
 
   const handleSaveEdit = () => {
@@ -536,7 +543,14 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
     
     const updatedItems = invoiceItems.map(item => 
       item.id === editingItem.id 
-        ? { ...item, price: roundedPrice, quantity } 
+        ? { 
+            ...item, 
+            price: roundedPrice, 
+            quantity, 
+            serviceName: editServiceNameInput.trim(),
+            brandName: editBrandNameInput.trim(),
+            modelName: editModelNameInput.trim()
+          } 
         : item
     );
     
@@ -932,12 +946,12 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-card rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-border"
+              className="bg-card rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-border"
             >
               <div className="p-6 bg-primary/10 border-b border-border flex items-center justify-between">
                 <div>
                   <h3 className="font-bold text-foreground">Edit Invoice Item</h3>
-                  <p className="text-[10px] text-primary font-bold uppercase tracking-wider">{editingItem.serviceName}</p>
+                  <p className="text-[10px] text-primary font-bold uppercase tracking-wider">Modify product details & price</p>
                 </div>
                 <button 
                   onClick={() => setEditingItem(null)}
@@ -947,9 +961,40 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
                 </button>
               </div>
 
-              <div className="p-8 space-y-6">
+              <div className="p-6 space-y-4">
                 <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="relative pt-1">
+                    <input 
+                      type="text"
+                      value={editServiceNameInput}
+                      onChange={(e) => setEditServiceNameInput(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-muted border border-border focus:border-primary focus:bg-card text-sm font-bold text-foreground transition-all outline-none"
+                    />
+                    <label className="absolute -top-1 left-3 px-1 bg-card text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Item Description</label>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div className="relative">
+                      <input 
+                        type="text"
+                        value={editBrandNameInput}
+                        onChange={(e) => setEditBrandNameInput(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl bg-muted border border-border focus:border-primary focus:bg-card text-sm font-bold text-foreground transition-all outline-none"
+                      />
+                      <label className="absolute -top-2 left-3 px-1 bg-card text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Brand</label>
+                    </div>
+                    <div className="relative">
+                      <input 
+                        type="text"
+                        value={editModelNameInput}
+                        onChange={(e) => setEditModelNameInput(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl bg-muted border border-border focus:border-primary focus:bg-card text-sm font-bold text-foreground transition-all outline-none"
+                      />
+                      <label className="absolute -top-2 left-3 px-1 bg-card text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Model</label>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3 pt-1">
                     <div className="col-span-2 relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">$</span>
                       <input 
@@ -958,9 +1003,9 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
                         value={editPriceInput}
                         onChange={(e) => setEditPriceInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
-                        className="w-full pl-10 pr-4 py-6 rounded-2xl bg-muted border-2 border-transparent focus:border-primary focus:bg-card text-2xl font-black text-foreground transition-all outline-none"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-muted border border-border focus:border-primary focus:bg-card text-base font-bold text-foreground transition-all outline-none"
                       />
-                      <label className="absolute -top-2 left-4 px-1 bg-card text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Price</label>
+                      <label className="absolute -top-2 left-3 px-1 bg-card text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Price</label>
                     </div>
                     <div className="relative">
                       <input 
@@ -969,9 +1014,9 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
                         value={editQuantityInput}
                         onChange={(e) => setEditQuantityInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
-                        className="w-full px-4 py-6 rounded-2xl bg-muted border-2 border-transparent focus:border-primary focus:bg-card text-2xl font-black text-foreground transition-all outline-none"
+                        className="w-full px-4 py-3 rounded-xl bg-muted border border-border focus:border-primary focus:bg-card text-base font-bold text-foreground transition-all outline-none"
                       />
-                      <label className="absolute -top-2 left-4 px-1 bg-card text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Qty</label>
+                      <label className="absolute -top-2 left-3 px-1 bg-card text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Qty</label>
                     </div>
                   </div>
                 </div>
@@ -2147,7 +2192,7 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
                     className="p-4 bg-muted/40 rounded-2xl border border-border flex justify-between items-center group shadow-sm hover:shadow-md hover:bg-muted/60 transition-all cursor-pointer"
                     onClick={() => handleStartEdit(item)}
                   >
-                    <div className="flex gap-3 flex-1 min-w-0 pr-2">
+                    <div className="flex gap-3 flex-1 min-w-0 pr-1">
                       <div className="w-8 h-8 shrink-0 rounded-lg bg-card border border-border flex items-center justify-center font-black text-[10px] text-muted-foreground group-hover:border-primary/50 group-hover:text-primary transition-all">
                         {item.quantity}
                       </div>
@@ -2164,12 +2209,22 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
                         </div>
                       </div>
                     </div>
-                    <button 
-                      onClick={() => removeItem(item.id)}
-                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleStartEdit(item); }}
+                        className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                        title="Edit Item"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}
+                        className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                        title="Delete Item"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </motion.div>
                 ))
               )}

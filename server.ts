@@ -74,7 +74,7 @@ const updateCatalogTool: FunctionDeclaration = {
 
 async function startServer() {
   const app = express();
-  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+  const PORT = 3000;
 
   // Initialize Firebase Admin
   const configPath = path.join(process.cwd(), "firebase-applet-config.json");
