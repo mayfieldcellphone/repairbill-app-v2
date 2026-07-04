@@ -1214,6 +1214,16 @@ export function LandingPage() {
           </motion.div>
         </div>
       )}
+
+      {/* WhatsApp Widget - Only on Landing Page */}
+      <a 
+        href="https://wa.me/15556634858?text=I%20have%20a%20question%20about%20my%20invoice" 
+        className="fixed bottom-10 right-10 w-14 h-14 bg-[#25d366] text-white rounded-full flex items-center justify-center text-3xl shadow-xl z-[1000] hover:scale-110 transition-transform active:scale-95"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <MessageSquare size={24} fill="currentColor" />
+      </a>
     </div>
   );
 }
