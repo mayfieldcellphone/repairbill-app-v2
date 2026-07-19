@@ -198,7 +198,7 @@ async function startServer() {
       return res.status(400).json({ error: "Missing required 'text' parameter in request body." });
     }
 
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const apiKey = process.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
       return res.status(500).json({ error: "Gemini API key is not configured on the server." });
     }
@@ -285,7 +285,7 @@ async function startServer() {
     try {
       // Determine the API Key: use custom settings Key if supplied, or default to the backend process.env key
       const usingCustomKey = !!(settings?.geminiApiKey && settings.geminiApiKey.trim());
-      const apiKey = usingCustomKey ? settings.geminiApiKey.trim() : import.meta.env.VITE_GEMINI_API_KEY;
+      const apiKey = usingCustomKey ? settings.geminiApiKey.trim() : process.env.VITE_GEMINI_API_KEY;
 
       const assistant_ai = new GoogleGenAI({
         apiKey: apiKey,
@@ -466,11 +466,11 @@ async function startServer() {
           String(firstError.message || firstError).toLowerCase().includes("not found")
         );
 
-        if (isAuthError && import.meta.env.VITE_GEMINI_API_KEY) {
+        if (isAuthError && process.env.VITE_GEMINI_API_KEY) {
           console.log("[Assistant AI Fallback] Custom key failed authorization/unsupported-model. Falling back to platform backend API key...");
           try {
             const fallback_ai = new GoogleGenAI({
-              apiKey: import.meta.env.VITE_GEMINI_API_KEY,
+              apiKey: process.env.VITE_GEMINI_API_KEY,
               httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
             });
             response = await fallback_ai.models.generateContent({
@@ -512,10 +512,10 @@ async function startServer() {
               });
             } catch (thirdError: any) {
               // As an ultimate last resort, if custom key failed with any other error
-              if (usingCustomKey && import.meta.env.VITE_GEMINI_API_KEY) {
+              if (usingCustomKey && process.env.VITE_GEMINI_API_KEY) {
                 console.log("[Assistant AI Last-Resort Fallback] Custom key entirely failed. Retrying one final time with backup platform key...");
                 const fallback_ai = new GoogleGenAI({
-                  apiKey: import.meta.env.VITE_GEMINI_API_KEY,
+                  apiKey: process.env.VITE_GEMINI_API_KEY,
                   httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
                 });
                 response = await fallback_ai.models.generateContent({
