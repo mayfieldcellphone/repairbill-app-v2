@@ -359,7 +359,9 @@ export default function App() {
     
     const fetchInvoices = async () => {
       try {
-        const response = await fetch('/api/invoices');
+        const response = await fetch('/api/invoices', {
+          headers: { 'x-internal-api-key': 'RB_SECURE_3c818aaca6e25d77ac6fc73b' }
+        });
         if (response.ok) {
           const data = await response.json();
           setInvoices(data);
@@ -375,12 +377,25 @@ export default function App() {
     return () => clearInterval(interval);
   }, [user]);
 
-  // Sync Expenses from Firestore
+  // Sync Expenses from PostgreSQL (VPS)
   useEffect(() => {
     if (!user) return;
-    return subscribeToDocuments<Expense>(`users/${user.uid}/expenses`, (data) => {
-      setExpenses(data);
-    });
+    const fetchExpenses = async () => {
+      try {
+        const response = await fetch('/api/expenses', {
+          headers: { 'x-internal-api-key': 'RB_SECURE_3c818aaca6e25d77ac6fc73b' }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setExpenses(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch expenses from VPS", error);
+      }
+    };
+    fetchExpenses();
+    const interval = setInterval(fetchExpenses, 30000);
+    return () => clearInterval(interval);
   }, [user]);
 
   // Sync Brands from Firestore
@@ -411,12 +426,25 @@ export default function App() {
     });
   }, [user]);
 
-  // Sync Customers from Firestore
+  // Sync Customers from PostgreSQL (VPS)
   useEffect(() => {
     if (!user) return;
-    return subscribeToDocuments<Customer>(`users/${user.uid}/customers`, (data) => {
-      setCustomers(data);
-    });
+    const fetchCustomers = async () => {
+      try {
+        const response = await fetch('/api/customers', {
+          headers: { 'x-internal-api-key': 'RB_SECURE_3c818aaca6e25d77ac6fc73b' }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setCustomers(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch customers from VPS", error);
+      }
+    };
+    fetchCustomers();
+    const interval = setInterval(fetchCustomers, 30000);
+    return () => clearInterval(interval);
   }, [user]);
 
   // Sync Leads from Firestore
@@ -736,16 +764,22 @@ export default function App() {
     
     // Save Invoice to VPS PostgreSQL
     try {
-      await fetch('/api/invoices', {
+      const response = await fetch('/api/invoices', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-internal-api-key': 'RB_SECURE_3c818aaca6e25d77ac6fc73b'
+        },
         body: JSON.stringify(invoice)
       });
+      if (!response.ok) throw new Error("Server error");
     } catch (error) {
       console.error("Failed to save invoice to VPS", error);
+      window.alert("CRITICAL: Failed to save invoice to secure database. Please check connection.");
+      return; // Don't proceed if save failed
     }
     
-    // Auto-save Customer to Firestore (keeping this for now)
+    // Auto-save Customer to VPS PostgreSQL
     const customerId = invoice.customerEmail.toLowerCase().replace(/[^a-z0-9]/g, '-') || Date.now().toString();
     const customer: Customer = {
       id: customerId,
@@ -757,7 +791,18 @@ export default function App() {
     if (invoice.customerCompany !== undefined) customer.company = invoice.customerCompany;
     if (invoice.customerNotes !== undefined) customer.notes = invoice.customerNotes;
     
-    await saveDocument(`users/${user.uid}/customers`, customer.id, customer);
+    try {
+      await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-internal-api-key': 'RB_SECURE_3c818aaca6e25d77ac6fc73b'
+        },
+        body: JSON.stringify(customer)
+      });
+    } catch (error) {
+      console.error("Failed to save customer to VPS", error);
+    }
 
     setEditingInvoice(null);
     setShowCreator(false);
@@ -792,12 +837,31 @@ export default function App() {
 
   const addExpense = async (expense: Expense) => {
     if (!user) return;
-    await saveDocument(`users/${user.uid}/expenses`, expense.id, expense);
+    try {
+      await fetch('/api/expenses', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-internal-api-key': 'RB_SECURE_3c818aaca6e25d77ac6fc73b'
+        },
+        body: JSON.stringify(expense)
+      });
+    } catch (error) {
+      console.error("Failed to save expense", error);
+      window.alert("Failed to save expense to secure database.");
+    }
   };
 
   const deleteExpense = async (id: string) => {
     if (!user) return;
-    await removeDocument(`users/${user.uid}/expenses`, id);
+    try {
+      await fetch(`/api/expenses/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-internal-api-key': 'RB_SECURE_3c818aaca6e25d77ac6fc73b' }
+      });
+    } catch (error) {
+      console.error("Failed to delete expense", error);
+    }
   };
 
   const addSupplier = async (supplier: Supplier) => {
