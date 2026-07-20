@@ -3,6 +3,15 @@ import { query } from './db';
 
 const router = express.Router();
 
+// Internal API Key security check
+router.use((req, res, next) => {
+    const apiKey = req.headers['x-internal-api-key'];
+    if (apiKey !== process.env.VITE_INTERNAL_API_KEY) {
+        return res.status(403).json({ error: 'Forbidden: Invalid Internal API Key' });
+    }
+    next();
+});
+
 // GET /api/invoices
 router.get('/api/invoices', async (req, res) => {
   try {
