@@ -353,12 +353,26 @@ export default function App() {
     });
   }, [user]);
 
-  // Sync Invoices from Firestore
+  // Sync Invoices from PostgreSQL (VPS)
   useEffect(() => {
     if (!user) return;
-    return subscribeToDocuments<Invoice>(`users/${user.uid}/invoices`, (data) => {
-      setInvoices(data);
-    });
+    
+    const fetchInvoices = async () => {
+      try {
+        const response = await fetch('/api/invoices');
+        if (response.ok) {
+          const data = await response.json();
+          setInvoices(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch invoices from VPS", error);
+      }
+    };
+
+    fetchInvoices();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchInvoices, 30000);
+    return () => clearInterval(interval);
   }, [user]);
 
   // Sync Expenses from Firestore
@@ -720,10 +734,18 @@ export default function App() {
   const handleInvoiceCreated = async (invoice: Invoice) => {
     if (!user) return;
     
-    // Save Invoice
-    await saveDocument(`users/${user.uid}/invoices`, invoice.id, invoice);
+    // Save Invoice to VPS PostgreSQL
+    try {
+      await fetch('/api/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(invoice)
+      });
+    } catch (error) {
+      console.error("Failed to save invoice to VPS", error);
+    }
     
-    // Auto-save Customer
+    // Auto-save Customer to Firestore (keeping this for now)
     const customerId = invoice.customerEmail.toLowerCase().replace(/[^a-z0-9]/g, '-') || Date.now().toString();
     const customer: Customer = {
       id: customerId,
