@@ -5,6 +5,8 @@ import fs from "fs";
 import admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
 import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
+import invoicesRouter from "./invoices-api";
+import { ensureTables } from "./db";
 
 const createInvoiceTool: FunctionDeclaration = {
   name: "createInvoice",
@@ -110,8 +112,15 @@ async function startServer() {
     ? getFirestore(firebaseApp, FIRESTORE_DATABASE_ID)
     : getFirestore(firebaseApp);
 
+  // Ensure the PostgreSQL tables exist (invoices, customers, expenses).
+  await ensureTables();
+
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  // Mount the PostgreSQL-backed API (invoices, customers, expenses).
+  // Every route inside is protected by Firebase ID-token verification.
+  app.use(invoicesRouter);
 
   // API Health Check
   app.get("/api/health", (req, res) => {
