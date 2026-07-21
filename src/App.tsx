@@ -359,8 +359,9 @@ export default function App() {
     
     const fetchInvoices = async () => {
       try {
+        const token = await user.getIdToken();
         const response = await fetch('/api/invoices', {
-          headers: { 'x-internal-api-key': 'RB_SECURE_3c818aaca6e25d77ac6fc73b' }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
           const data = await response.json();
@@ -372,10 +373,54 @@ export default function App() {
     };
 
     fetchInvoices();
-    // Refresh every 30 seconds
     const interval = setInterval(fetchInvoices, 30000);
     return () => clearInterval(interval);
   }, [user]);
+
+  // Sync Customers from PostgreSQL (VPS)
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchCustomers = async () => {
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch('/api/customers', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setCustomers(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch customers from VPS", error);
+      }
+    };
+
+    fetchCustomers();
+  }, [user]);
+
+  // Sync Expenses from PostgreSQL (VPS)
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchExpenses = async () => {
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch('/api/expenses', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setExpenses(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch expenses from VPS", error);
+      }
+    };
+
+    fetchExpenses();
+  }, [user]);
+
 
   // Sync Expenses from PostgreSQL (VPS)
   useEffect(() => {
@@ -764,11 +809,12 @@ export default function App() {
     
     // Save Invoice to VPS PostgreSQL
     try {
+      const token = await user.getIdToken();
       const response = await fetch('/api/invoices', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-internal-api-key': 'RB_SECURE_3c818aaca6e25d77ac6fc73b'
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(invoice)
       });
@@ -792,11 +838,12 @@ export default function App() {
     if (invoice.customerNotes !== undefined) customer.notes = invoice.customerNotes;
     
     try {
+      const token = await user.getIdToken();
       await fetch('/api/customers', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-internal-api-key': 'RB_SECURE_3c818aaca6e25d77ac6fc73b'
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(customer)
       });
@@ -838,11 +885,12 @@ export default function App() {
   const addExpense = async (expense: Expense) => {
     if (!user) return;
     try {
+      const token = await user.getIdToken();
       await fetch('/api/expenses', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-internal-api-key': 'RB_SECURE_3c818aaca6e25d77ac6fc73b'
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(expense)
       });
@@ -855,9 +903,10 @@ export default function App() {
   const deleteExpense = async (id: string) => {
     if (!user) return;
     try {
+      const token = await user.getIdToken();
       await fetch(`/api/expenses/${id}`, {
         method: 'DELETE',
-        headers: { 'x-internal-api-key': 'RB_SECURE_3c818aaca6e25d77ac6fc73b' }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
     } catch (error) {
       console.error("Failed to delete expense", error);

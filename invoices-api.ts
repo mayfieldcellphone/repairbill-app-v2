@@ -1,21 +1,34 @@
 import express from 'express';
 import { query } from './db';
+import admin from 'firebase-admin';
 
 const router = express.Router();
 
-// Internal API Key security check
-router.use((req, res, next) => {
-    const apiKey = req.headers['x-internal-api-key'];
-    if (apiKey !== process.env.VITE_INTERNAL_API_KEY) {
-        return res.status(403).json({ error: 'Forbidden: Invalid Internal API Key' });
+// Firebase Auth Middleware
+router.use(async (req: any, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
     }
-    next();
+
+    const token = authHeader.split(' ')[1];
+    try {
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        req.user = decodedToken;
+        next();
+    } catch (error) {
+        console.error('Firebase token verification failed:', error);
+        return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+    }
 });
 
+// --- INVOICES ---
+
 // GET /api/invoices
-router.get('/api/invoices', async (req, res) => {
+router.get('/api/invoices', async (req: any, res) => {
   try {
-    const result = await query("SELECT * FROM invoices WHERE user_id = 'owner' ORDER BY created_at DESC");
+    const userId = req.user.uid;
+    const result = await query("SELECT * FROM invoices WHERE user_id = $1 ORDER BY created_at DESC", [userId]);
     
     // Map database columns to camelCase for the React app
     const invoices = result.rows.map(row => ({
@@ -46,15 +59,16 @@ router.get('/api/invoices', async (req, res) => {
 });
 
 // POST /api/invoices
-router.post('/api/invoices', async (req, res) => {
+router.post('/api/invoices', async (req: any, res) => {
   const inv = req.body;
+  const userId = req.user.uid;
   try {
     const sql = `
       INSERT INTO invoices (
         id, user_id, invoice_number, customer_name, customer_email, 
         customer_phone, customer_company, customer_notes, date, due_date, 
         items, subtotal, tax_amount, total, status, type, payment_method
-      ) VALUES ($1, 'owner', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
       ON CONFLICT (id) DO UPDATE SET 
         status = EXCLUDED.status,
         total = EXCLUDED.total,
@@ -63,7 +77,7 @@ router.post('/api/invoices', async (req, res) => {
     `;
     
     const values = [
-      inv.id, inv.invoiceNumber, inv.customerName, inv.customerEmail, 
+      inv.id, userId, inv.invoiceNumber, inv.customerName, inv.customerEmail, 
       inv.customerPhone, inv.customerCompany, inv.customerNotes, inv.date, inv.dueDate, 
       JSON.stringify(inv.items), inv.subtotal, inv.taxAmount, inv.total, 
       inv.status, inv.type, inv.paymentMethod
@@ -71,6 +85,91 @@ router.post('/api/invoices', async (req, res) => {
     
     const result = await query(sql, values);
     res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// --- CUSTOMERS ---
+
+// GET /api/customers
+router.get('/api/customers', async (req: any, res) => {
+  try {
+    const userId = req.user.uid;
+    const result = await query("SELECT * FROM customers WHERE user_id = $1 ORDER BY created_at DESC", [userId]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// POST /api/customers
+router.post('/api/customers', async (req: any, res) => {
+  const cust = req.body;
+  const userId = req.user.uid;
+  try {
+    const sql = `
+      INSERT INTO customers (id, user_id, name, email, phone, company, notes)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (id) DO UPDATE SET 
+        name = EXCLUDED.name,
+        email = EXCLUDED.email,
+        phone = EXCLUDED.phone
+      RETURNING *;
+    `;
+    const values = [cust.id, userId, cust.name, cust.email, cust.phone, cust.company, cust.notes];
+    const result = await query(sql, values);
+    res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// --- EXPENSES ---
+
+// GET /api/expenses
+router.get('/api/expenses', async (req: any, res) => {
+  try {
+    const userId = req.user.uid;
+    const result = await query("SELECT * FROM expenses WHERE user_id = $1 ORDER BY created_at DESC", [userId]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// POST /api/expenses
+router.post('/api/expenses', async (req: any, res) => {
+  const exp = req.body;
+  const userId = req.user.uid;
+  try {
+    const sql = `
+      INSERT INTO expenses (id, user_id, description, amount, category, date, payment_method, supplier)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      ON CONFLICT (id) DO UPDATE SET 
+        description = EXCLUDED.description,
+        amount = EXCLUDED.amount
+      RETURNING *;
+    `;
+    const values = [exp.id, userId, exp.description, exp.amount, exp.category, exp.date, exp.paymentMethod, exp.supplier];
+    const result = await query(sql, values);
+    res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// DELETE /api/expenses/:id
+router.delete('/api/expenses/:id', async (req: any, res) => {
+  try {
+    const userId = req.user.uid;
+    await query("DELETE FROM expenses WHERE id = $1 AND user_id = $2", [req.params.id, userId]);
+    res.json({ success: true });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });

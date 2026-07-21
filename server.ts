@@ -6,7 +6,7 @@ import admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
 import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
 import invoicesRouter from "./invoices-api";
-import { ensureInvoicesTable } from "./db";
+import { ensureTables } from "./db";
 
 const createInvoiceTool: FunctionDeclaration = {
   name: "createInvoice",
@@ -106,7 +106,7 @@ async function startServer() {
     ? getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId)
     : getFirestore(firebaseApp);
 
-  await ensureInvoicesTable();
+  await ensureTables();
 
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
