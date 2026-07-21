@@ -839,7 +839,7 @@ export default function App() {
     
     try {
       const token = await user.getIdToken();
-      await fetch('/api/customers', {
+      const response = await fetch('/api/customers', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -847,8 +847,10 @@ export default function App() {
         },
         body: JSON.stringify(customer)
       });
+      if (!response.ok) throw new Error("Customer save failed");
     } catch (error) {
       console.error("Failed to save customer to VPS", error);
+      window.alert("Warning: Invoice saved, but customer record could not be updated in the database.");
     }
 
     setEditingInvoice(null);

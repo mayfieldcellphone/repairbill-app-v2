@@ -5,8 +5,6 @@ import fs from "fs";
 import admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
 import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
-import invoicesRouter from "./invoices-api";
-import { ensureTables } from "./db";
 
 const createInvoiceTool: FunctionDeclaration = {
   name: "createInvoice",
@@ -48,10 +46,10 @@ const createExpenseTool: FunctionDeclaration = {
       description: { type: Type.STRING, description: "What was the expense for?" },
       amount: { type: Type.NUMBER, description: "Total amount spent (inclusive of tax)" },
       date: { type: Type.STRING, description: "Date of the expense in YYYY-MM-DD format. Support backdating (e.g. last month, last Monday)." },
-      category: { 
-        type: Type.STRING, 
+      category: {
+        type: Type.STRING,
         enum: ["Shop Rent", "Ads", "Electricity", "Insurance", "ADT Security", "Phone Orders", "Supplier Payment", "Tools", "Staff", "Marketing", "Other"],
-        description: "Category of expense" 
+        description: "Category of expense"
       },
       paymentMethod: { type: Type.STRING, enum: ["Cash", "Card", "Bank Transfer"], description: "How was it paid?" },
       supplier: { type: Type.STRING, description: "Who was the supplier?" }
@@ -78,9 +76,15 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Initialize Firebase Admin
-  const configPath = path.join(process.cwd(), "firebase-applet-config.json");
-  const firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+  // Initialize Firebase Admin using environment variables (no local config JSON required).
+  const FIREBASE_PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID;
+  // Optional: only needed if your Firestore data lives in a named (non-default) database.
+  const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID;
+
+  if (!FIREBASE_PROJECT_ID) {
+    console.error("[Firebase] Missing VITE_FIREBASE_PROJECT_ID environment variable. Set it in your .env file before starting the server.");
+    process.exit(1);
+  }
 
   let firebaseApp;
   if (!admin.apps.length) {
@@ -89,12 +93,12 @@ async function startServer() {
       const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
       firebaseApp = admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        projectId: firebaseConfig.projectId
+        projectId: FIREBASE_PROJECT_ID
       });
       console.log("[Firebase] Initialized with Service Account JSON key.");
     } else {
       firebaseApp = admin.initializeApp({
-        projectId: firebaseConfig.projectId,
+        projectId: FIREBASE_PROJECT_ID,
       });
       console.log("[Firebase] Initialized with Application Default Credentials.");
     }
@@ -102,15 +106,12 @@ async function startServer() {
     firebaseApp = admin.apps[0];
   }
 
-  const db = firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== "(default)"
-    ? getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId)
+  const db = FIRESTORE_DATABASE_ID
+    ? getFirestore(firebaseApp, FIRESTORE_DATABASE_ID)
     : getFirestore(firebaseApp);
-
-  await ensureTables();
 
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
-  app.use(invoicesRouter);
 
   // API Health Check
   app.get("/api/health", (req, res) => {
@@ -124,16 +125,16 @@ async function startServer() {
   app.post("/api/web-integration/leads", async (req, res) => {
     // Extract API Key from Authorization header (Bearer token)
     let apiKey = req.headers["authorization"]?.replace("Bearer ", "");
-    
+
     // Fallback to query param for simpler integrations if needed
     if (!apiKey) {
       apiKey = req.query.apiKey as string;
     }
 
     if (!apiKey) {
-      return res.status(401).json({ 
-        error: "Missing API Key", 
-        message: "Please include your API key in the Authorization header as 'Bearer YOUR_KEY' or as a query parameter 'apiKey=YOUR_KEY'." 
+      return res.status(401).json({
+        error: "Missing API Key",
+        message: "Please include your API key in the Authorization header as 'Bearer YOUR_KEY' or as a query parameter 'apiKey=YOUR_KEY'."
       });
     }
 
@@ -142,7 +143,7 @@ async function startServer() {
       // Note: We use the Enterprise database ID if provided
       const usersRef = db.collection("users");
       const userSnapshot = await usersRef.where("apiKey", "==", apiKey).limit(1).get();
-      
+
       if (userSnapshot.empty) {
         return res.status(401).json({ error: "Invalid API Key" });
       }
@@ -160,7 +161,7 @@ async function startServer() {
 
       // Create the lead ID
       const leadId = `web_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      
+
       const newLead = {
         id: leadId,
         customerName,
@@ -182,10 +183,10 @@ async function startServer() {
 
       console.log(`[API] New lead created for user ${uid}: ${leadId}`);
 
-      res.status(201).json({ 
-        success: true, 
+      res.status(201).json({
+        success: true,
         message: "Lead successfully recorded in your RepairBill inbox.",
-        leadId 
+        leadId
       });
     } catch (error) {
       console.error("Web Integration API Error:", error);
@@ -232,12 +233,12 @@ async function startServer() {
           requiresFollowUp: { type: Type.BOOLEAN, description: "Set true if water damage, motherboard, or complex troubleshooting is required, otherwise false." }
         },
         required: [
-          "customerName", 
-          "deviceBrand", 
-          "deviceModel", 
-          "issueDescription", 
-          "repairService", 
-          "priceEstimation", 
+          "customerName",
+          "deviceBrand",
+          "deviceModel",
+          "issueDescription",
+          "repairService",
+          "priceEstimation",
           "requiresFollowUp"
         ]
       }
@@ -247,7 +248,7 @@ async function startServer() {
       let response;
       try {
         response = await ai.models.generateContent({
-          model: "gemini-3.5-flash", 
+          model: "gemini-3.5-flash",
           contents: text,
           config
         });
@@ -255,14 +256,14 @@ async function startServer() {
         console.warn("[Intake Agent First-Attempt Error, Retrying with gemini-3.1-pro-preview]:", firstError.message);
         try {
           response = await ai.models.generateContent({
-            model: "gemini-3.1-pro-preview", 
+            model: "gemini-3.1-pro-preview",
             contents: text,
             config
           });
         } catch (secondError: any) {
           console.warn("[Intake Agent Second-Attempt Error, Retrying with gemini-3.5-flash]:", secondError.message);
           response = await ai.models.generateContent({
-            model: "gemini-3.5-flash", 
+            model: "gemini-3.5-flash",
             contents: text,
             config
           });
@@ -273,9 +274,9 @@ async function startServer() {
       res.json({ success: true, data: jsonOutput });
     } catch (error: any) {
       console.error("[Intake Agent API Error]:", error);
-      res.status(500).json({ 
-        error: "Failed to parse intake details", 
-        details: error instanceof Error ? error.message : "Unknown error" 
+      res.status(500).json({
+        error: "Failed to parse intake details",
+        details: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
@@ -457,7 +458,7 @@ async function startServer() {
         });
       } catch (firstError: any) {
         console.warn("[Assistant AI First-Attempt Error]:", firstError.message || firstError);
-        
+
         // Treat as auth / fallback candidate if there's any key suspension / format / unknown model or configuration errors
         const isAuthError = usingCustomKey && (
           String(firstError.message || firstError).toLowerCase().includes("suspended") ||
@@ -539,8 +540,8 @@ async function startServer() {
         }
       }
 
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         response: {
           candidates: response.candidates,
           text: response.text,
@@ -579,3 +580,4 @@ async function startServer() {
 }
 
 startServer();
+
