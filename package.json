@@ -16,6 +16,7 @@
     "@fontsource-variable/geist": "^5.2.8",
     "@google/genai": "^1.29.0",
     "@hello-pangea/dnd": "^18.0.1",
+    "@hono/node-server": "^2.0.11",
     "@radix-ui/react-label": "^2.1.8",
     "@tailwindcss/vite": "^4.1.14",
     "@types/react-window": "^1.8.8",
@@ -25,7 +26,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.28.1",
     "express": "^4.21.2",
     "firebase": "^12.12.1",
     "firebase-admin": "^13.9.0",
@@ -33,6 +34,7 @@
     "jspdf": "^4.2.1",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
+    "next": "^16.2.11",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "react-window": "^2.2.7",
@@ -48,12 +50,18 @@
     "@types/express": "^4.17.21",
     "@types/node": "^22.14.0",
     "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.14",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.3"
   },
   "overrides": {
-    "node-domexception": "file:./node-domexception"
+    "node-domexception": "file:./node-domexception",
+    "postcss": "$postcss",
+    "sharp": "^0.35.0",
+    "uuid": "$uuid",
+    "@hono/node-server": "^2.0.11",
+    "esbuild": "^0.28.1"
   }
 }
