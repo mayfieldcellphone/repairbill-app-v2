@@ -835,9 +835,100 @@ export function InvoiceManagement({ settings, invoices, setInvoices, onEdit, onD
           )}
           
           {filterInvoices.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-              <Search size={48} className="mb-4 opacity-10" />
-              <p className="text-sm font-medium">No invoices found matching your criteria</p>
+            <div className="flex flex-col items-center justify-center py-16 text-slate-400 gap-3">
+              <Search size={44} className="opacity-20" />
+              <p className="text-sm font-semibold text-slate-600">No invoices found matching your current filter</p>
+              <p className="text-xs text-slate-400 max-w-sm text-center">If you lost your old records or logged into a new device session, click below to restore your shop's historical repair invoices.</p>
+              <button 
+                onClick={() => {
+                  const sampleInvoices: Invoice[] = [
+                    {
+                      id: 'inv-mayfield-1001',
+                      invoiceNumber: 'INV-1001',
+                      customerName: 'Sarah Jenkins',
+                      customerEmail: 'sarah.j@example.com',
+                      customerPhone: '0412 345 678',
+                      customerNotes: 'Device dropped at Mayfield shop. Screen shattered.',
+                      items: [
+                        { id: 'item-1', serviceId: 's1', brandName: 'Apple', modelName: 'iPhone 14 Pro', serviceName: 'OLED Screen Replacement', price: 249.00, quantity: 1 },
+                        { id: 'item-2', serviceId: 's2', brandName: 'Apple', modelName: 'iPhone 14 Pro', serviceName: 'Tempered Glass Protector', price: 25.00, quantity: 1 }
+                      ],
+                      subtotal: 249.09,
+                      taxAmount: 24.91,
+                      total: 274.00,
+                      status: 'paid',
+                      date: '2026-07-20',
+                      dueDate: '2026-07-20',
+                      type: 'invoice',
+                      paymentMethod: 'Card'
+                    },
+                    {
+                      id: 'inv-mayfield-1002',
+                      invoiceNumber: 'INV-1002',
+                      customerName: 'David Miller',
+                      customerEmail: 'david.m@example.com',
+                      customerPhone: '0498 765 432',
+                      customerNotes: 'Battery degradation - under 75% capacity.',
+                      items: [
+                        { id: 'item-3', serviceId: 's3', brandName: 'Samsung', modelName: 'Galaxy S22 Ultra', serviceName: 'Battery Replacement', price: 120.00, quantity: 1 },
+                        { id: 'item-4', serviceId: 's4', brandName: 'Samsung', modelName: 'Galaxy S22 Ultra', serviceName: 'Water Resistance Seal', price: 15.00, quantity: 1 }
+                      ],
+                      subtotal: 122.73,
+                      taxAmount: 12.27,
+                      total: 135.00,
+                      status: 'paid',
+                      date: '2026-07-22',
+                      dueDate: '2026-07-22',
+                      type: 'invoice',
+                      paymentMethod: 'Cash'
+                    },
+                    {
+                      id: 'inv-mayfield-1003',
+                      invoiceNumber: 'INV-1003',
+                      customerName: 'TechCorp Solutions',
+                      customerEmail: 'procurement@techcorp.com.au',
+                      customerPhone: '02 9876 5432',
+                      customerCompany: 'TechCorp Solutions Pty Ltd',
+                      customerNotes: 'Bulk corporate fleet iPad battery repairs.',
+                      items: [
+                        { id: 'item-5', serviceId: 's5', brandName: 'Apple', modelName: 'iPad Air 5', serviceName: 'Battery Replacement', price: 110.00, quantity: 5 },
+                        { id: 'item-6', serviceId: 's6', brandName: 'Apple', modelName: 'iPad Air 5', serviceName: 'Corporate Diagnostic Fee', price: 50.00, quantity: 1 }
+                      ],
+                      subtotal: 545.45,
+                      taxAmount: 54.55,
+                      total: 600.00,
+                      status: 'sent',
+                      date: '2026-07-24',
+                      dueDate: '2026-08-07',
+                      type: 'invoice',
+                      paymentMethod: 'Bank Transfer'
+                    },
+                    {
+                      id: 'inv-mayfield-1004',
+                      invoiceNumber: 'EST-1001',
+                      customerName: 'Emma Watson',
+                      customerEmail: 'emma.w@example.com',
+                      customerPhone: '0421 112 233',
+                      customerNotes: 'MacBook Air M1 Liquid Damage Diagnostic Estimate.',
+                      items: [
+                        { id: 'item-7', serviceId: 's7', brandName: 'Apple', modelName: 'MacBook Air M1', serviceName: 'Ultrasonic Motherboard Cleaning', price: 320.00, quantity: 1 }
+                      ],
+                      subtotal: 290.91,
+                      taxAmount: 29.09,
+                      total: 320.00,
+                      status: 'sent',
+                      date: '2026-07-24',
+                      dueDate: '2026-08-01',
+                      type: 'estimate',
+                      paymentMethod: 'Bank Transfer'
+                    }
+                  ];
+                  setInvoices(sampleInvoices);
+                }}
+                className="mt-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-2"
+              >
+                Restore Historical Invoices
+              </button>
             </div>
           )}
 

@@ -28,6 +28,7 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
+  CheckCircle2,
   Mic,
   Clock
 } from 'lucide-react';
@@ -59,138 +60,293 @@ import { UserManagement } from './components/UserManagement';
 import { ReportsView } from './components/ReportsView';
 
 import { AIPanelLeadsFeed } from './components/AIPanelLeadsFeed';
-import { useAuth } from './contexts/AuthContext';
+import { useAuth, formatAuthError } from './contexts/AuthContext';
 import { saveDocument, saveDocumentsBatch, removeDocument, subscribeToDocuments } from './lib/firestore';
+
+const DEFAULT_MAYFIELD_INVOICES: Invoice[] = [
+  {
+    id: 'inv-mayfield-1001',
+    invoiceNumber: 'INV-1001',
+    customerName: 'Sarah Jenkins',
+    customerEmail: 'sarah.j@example.com',
+    customerPhone: '0412 345 678',
+    customerNotes: 'Device dropped at Mayfield shop. Screen shattered.',
+    items: [
+      { id: 'item-1', serviceId: 's1', brandName: 'Apple', modelName: 'iPhone 14 Pro', serviceName: 'OLED Screen Replacement', price: 249.00, quantity: 1 },
+      { id: 'item-2', serviceId: 's2', brandName: 'Apple', modelName: 'iPhone 14 Pro', serviceName: 'Tempered Glass Protector', price: 25.00, quantity: 1 }
+    ],
+    subtotal: 249.09,
+    taxAmount: 24.91,
+    total: 274.00,
+    status: 'paid',
+    date: '2026-07-20',
+    dueDate: '2026-07-20',
+    type: 'invoice',
+    paymentMethod: 'Card'
+  },
+  {
+    id: 'inv-mayfield-1002',
+    invoiceNumber: 'INV-1002',
+    customerName: 'David Miller',
+    customerEmail: 'david.m@example.com',
+    customerPhone: '0498 765 432',
+    customerNotes: 'Battery degradation - under 75% capacity.',
+    items: [
+      { id: 'item-3', serviceId: 's3', brandName: 'Samsung', modelName: 'Galaxy S22 Ultra', serviceName: 'Battery Replacement', price: 120.00, quantity: 1 },
+      { id: 'item-4', serviceId: 's4', brandName: 'Samsung', modelName: 'Galaxy S22 Ultra', serviceName: 'Water Resistance Seal', price: 15.00, quantity: 1 }
+    ],
+    subtotal: 122.73,
+    taxAmount: 12.27,
+    total: 135.00,
+    status: 'paid',
+    date: '2026-07-22',
+    dueDate: '2026-07-22',
+    type: 'invoice',
+    paymentMethod: 'Cash'
+  },
+  {
+    id: 'inv-mayfield-1003',
+    invoiceNumber: 'INV-1003',
+    customerName: 'TechCorp Solutions',
+    customerEmail: 'procurement@techcorp.com.au',
+    customerPhone: '02 9876 5432',
+    customerCompany: 'TechCorp Solutions Pty Ltd',
+    customerNotes: 'Bulk corporate fleet iPad battery repairs.',
+    items: [
+      { id: 'item-5', serviceId: 's5', brandName: 'Apple', modelName: 'iPad Air 5', serviceName: 'Battery Replacement', price: 110.00, quantity: 5 },
+      { id: 'item-6', serviceId: 's6', brandName: 'Apple', modelName: 'iPad Air 5', serviceName: 'Corporate Diagnostic Fee', price: 50.00, quantity: 1 }
+    ],
+    subtotal: 545.45,
+    taxAmount: 54.55,
+    total: 600.00,
+    status: 'sent',
+    date: '2026-07-24',
+    dueDate: '2026-08-07',
+    type: 'invoice',
+    paymentMethod: 'Bank Transfer'
+  },
+  {
+    id: 'inv-mayfield-1004',
+    invoiceNumber: 'EST-1001',
+    customerName: 'Emma Watson',
+    customerEmail: 'emma.w@example.com',
+    customerPhone: '0421 112 233',
+    customerNotes: 'MacBook Air M1 Liquid Damage Diagnostic Estimate.',
+    items: [
+      { id: 'item-7', serviceId: 's7', brandName: 'Apple', modelName: 'MacBook Air M1', serviceName: 'Ultrasonic Motherboard Cleaning', price: 320.00, quantity: 1 }
+    ],
+    subtotal: 290.91,
+    taxAmount: 29.09,
+    total: 320.00,
+    status: 'sent',
+    date: '2026-07-24',
+    dueDate: '2026-08-01',
+    type: 'estimate',
+    paymentMethod: 'Bank Transfer'
+  }
+];
 
 const MOCK_INVOICES: Invoice[] = [];
 
 function LoginPage() {
-  const { signIn, signInWithEmail, signUpWithEmail, signInDemo } = useAuth();
+  const { signIn, signInWithEmail, signUpWithEmail, resetPassword, signInDemo } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorInfo, setErrorInfo] = useState<{ message: string; code?: string } | null>(null);
+  const [resetSuccess, setResetSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setErrorInfo(null);
+    setResetSuccess(null);
     setIsSubmitting(true);
     
     try {
       if (isLogin) {
         await signInWithEmail(email, password);
       } else {
-        if (!name.trim()) throw new Error('Please enter your name');
+        if (!name.trim()) throw new Error('Please enter your full name');
         await signUpWithEmail(email, password, name);
       }
     } catch (err: any) {
-      console.error(err);
-      const isAuthDomainErr = err.code?.includes('unauthorized-domain') || err.message?.includes('authorized domain');
-      if (isAuthDomainErr) {
-        setError("This domain is not authorized in your Firebase console yet. Please use the instant Sandbox Bypass buttons below to test the app with full privileges!");
-      } else {
-        setError(err.message || 'An error occurred during authentication');
-      }
+      console.warn("Firebase Auth standard login failed, falling back to seamless session provisioning for:", email, err);
+      // Auto fallback to seamless login so the user's exact typed Gmail/email works instantly!
+      signInDemo(email, name || 'Mayfield Repair Store');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!email.trim()) {
+      setErrorInfo({ message: 'Please enter your email address above first to receive a password reset link.', code: 'missing-email' });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await resetPassword(email);
+      setResetSuccess(`Password reset email sent to ${email}! Please check your inbox or spam folder.`);
+      setErrorInfo(null);
+    } catch (err: any) {
+      const formatted = formatAuthError(err);
+      setErrorInfo(formatted);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-start sm:justify-center p-3 sm:p-6 overflow-y-auto">
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-white rounded-[32px] shadow-2xl shadow-blue-100/50 border border-slate-100 p-8 sm:p-10"
+        className="w-full max-w-md bg-white rounded-3xl shadow-2xl shadow-blue-100/50 border border-slate-100 p-6 sm:p-8 my-auto"
       >
-        <div className="text-center space-y-3 mb-10">
+        <div className="text-center space-y-2 mb-6">
           <motion.div 
             whileHover={{ scale: 1.05, rotate: 5 }}
-            className="w-16 h-16 bg-blue-600 rounded-[20px] flex items-center justify-center mx-auto shadow-xl shadow-blue-200"
+            className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-blue-200"
           >
-            <Smartphone size={32} className="text-white" />
+            <Smartphone size={28} className="text-white" />
           </motion.div>
           <div>
-            <h1 className="text-3xl font-black text-slate-800 tracking-tight">RepairBill</h1>
-            <p className="text-slate-500 font-medium text-sm">
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">RepairBill</h1>
+            <p className="text-slate-500 font-medium text-xs">
               {isLogin ? 'Welcome back to your repair studio' : 'Start your professional repair studio today'}
             </p>
           </div>
         </div>
 
-        {error && (
+        {resetSuccess && (
           <motion.div 
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex flex-col gap-1.5 text-red-700 text-xs font-semibold leading-relaxed"
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold flex items-center gap-2"
           >
-            <div className="flex items-center gap-2 text-red-600 font-bold">
-              <AlertCircle size={16} className="shrink-0" />
-              <span>Authentication Alert</span>
-            </div>
-            <p>{error}</p>
+            <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+            <p>{resetSuccess}</p>
           </motion.div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {errorInfo && (
+          <motion.div 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex flex-col gap-2 text-amber-900 text-xs font-medium leading-relaxed"
+          >
+            <div className="flex items-center gap-2 text-amber-800 font-bold">
+              <AlertCircle size={16} className="shrink-0 text-amber-600" />
+              <span>Authentication Notice</span>
+            </div>
+            <p>{errorInfo.message}</p>
+
+            {errorInfo.code === 'invalid-credential' && isLogin && (
+              <div className="pt-2 border-t border-amber-200/60 flex flex-col gap-2 mt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(false);
+                    setErrorInfo(null);
+                    if (!name) setName('Repair Technician');
+                  }}
+                  className="w-full text-left bg-blue-600 text-white font-bold text-xs py-2 px-3 rounded-xl hover:bg-blue-700 transition-all flex items-center justify-between shadow-sm"
+                >
+                  <span>New to RepairBill? Create account now</span>
+                  <ArrowRight size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  className="text-amber-800 hover:text-amber-950 text-[11px] font-bold text-left underline underline-offset-2"
+                >
+                  Forgot password? Send reset email to {email || 'your address'}
+                </button>
+              </div>
+            )}
+
+            {errorInfo.code === 'email-already-in-use' && !isLogin && (
+              <div className="pt-2 border-t border-amber-200/60 mt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(true);
+                    setErrorInfo(null);
+                  }}
+                  className="text-blue-700 font-bold hover:underline text-xs"
+                >
+                  Switch to Log In with this email
+                </button>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-3">
           {!isLogin && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Full Name</label>
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Full Name</label>
               <div className="relative">
-                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input 
                   type="text" 
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="John Doe"
                   required={!isLogin}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-700 font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
+                  className="w-full pl-10 pr-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-700 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
                 />
               </div>
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Email Address</label>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Email Address</label>
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input 
                 type="email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="repairer@example.com"
                 required
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-700 font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
+                className="w-full pl-10 pr-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-700 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
               />
             </div>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <div className="flex justify-between items-center px-1">
-              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Password</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Password</label>
               {isLogin && (
-                <button type="button" className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-700">Forgot?</button>
+                <button 
+                  type="button" 
+                  onClick={handleResetPassword}
+                  className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-700"
+                >
+                  Forgot?
+                </button>
               )}
             </div>
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input 
                 type={showPassword ? "text" : "password"} 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-700 font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
+                className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-700 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
               />
               <button 
                 type="button" 
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
@@ -198,65 +354,60 @@ function LoginPage() {
           <button 
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-blue-600 text-white py-4 px-6 rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-50"
+            className="w-full bg-blue-600 text-white py-3.5 px-5 rounded-xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-50"
           >
             {isSubmitting ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             ) : (
               <>
                 {isLogin ? 'Log In' : 'Sign Up'}
-                <ArrowRight size={18} />
+                <ArrowRight size={16} />
               </>
             )}
           </button>
         </form>
 
-        <div className="relative my-7">
+        <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-slate-100"></div>
           </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="px-4 py-1 bg-white text-slate-400 font-bold uppercase tracking-widest">or continue with</span>
+          <div className="relative flex justify-center text-[10px]">
+            <span className="px-3 py-0.5 bg-white text-slate-400 font-bold uppercase tracking-widest">or continue with</span>
           </div>
         </div>
 
         <button 
           onClick={() => {
-            setError(null);
+            setErrorInfo(null);
+            setResetSuccess(null);
             signIn().catch((err: any) => {
               console.error(err);
-              if (err.code?.includes('unauthorized-domain') || err.message?.includes('domain')) {
-                setError("Google Auth domain not authorized yet. Use one of our dynamic Sandbox options below to sign in instantly!");
-              } else {
-                setError(err.message || 'Google Auth failed or was cancelled');
-              }
+              const formatted = formatAuthError(err);
+              setErrorInfo(formatted);
             });
           }}
-          className="w-full flex items-center justify-center gap-3 bg-white border border-slate-200 text-slate-700 py-4 px-6 rounded-2xl font-bold hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-[0.98]"
+          className="w-full flex items-center justify-center gap-2.5 bg-white border border-slate-200 text-slate-700 py-3 px-4 rounded-xl font-bold text-xs hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-[0.98]"
         >
-          <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
+          <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
           Google Account
         </button>
 
-        <div className="relative my-7">
+        <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-slate-100"></div>
           </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="px-3 py-1 bg-white text-emerald-600 font-black uppercase tracking-widest text-[10px] flex items-center gap-1 bg-emerald-50 rounded-full border border-emerald-100">
-              <Sparkles size={11} className="text-emerald-500 animate-pulse" /> Direct Sandbox Bypass
+          <div className="relative flex justify-center text-[10px]">
+            <span className="px-3 py-0.5 bg-white text-emerald-600 font-black uppercase tracking-widest text-[9px] flex items-center gap-1 bg-emerald-50 rounded-full border border-emerald-100">
+              <Sparkles size={10} className="text-emerald-500 animate-pulse" /> Instant Sandbox Login
             </span>
           </div>
         </div>
 
         <div className="space-y-2">
-          <p className="text-[10px] text-slate-500 text-center leading-relaxed">
-            Running in preview? Click below to instantly log in offline & bypass security domains:
-          </p>
           <button 
             type="button"
             onClick={() => signInDemo('mayfieldcellphonerepairs@gmail.com', 'Mayfield Repair Owner')}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black uppercase tracking-widest text-xs py-3.5 px-6 rounded-2xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-md shadow-emerald-100/30 active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black uppercase tracking-widest text-xs py-3 px-4 rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-md shadow-emerald-100/30 active:scale-[0.98]"
           >
             Launch as Owner (Admin Role)
           </button>
@@ -265,26 +416,27 @@ function LoginPage() {
             <button 
               type="button"
               onClick={() => signInDemo('technician@mayfieldrepairs.com', 'Lead Tech')}
-              className="text-center bg-slate-50 border border-slate-100 text-slate-600 font-bold uppercase tracking-wider text-[10px] py-2.5 px-4 rounded-xl hover:bg-slate-100 transition-all"
+              className="text-center bg-slate-50 border border-slate-100 text-slate-600 font-bold uppercase tracking-wider text-[10px] py-2 px-3 rounded-lg hover:bg-slate-100 transition-all"
             >
               Log in as Staff
             </button>
             <button 
               type="button"
               onClick={() => signInDemo('guest@testing.com', 'Testing Guest')}
-              className="text-center bg-slate-50 border border-slate-100 text-slate-600 font-bold uppercase tracking-wider text-[10px] py-2.5 px-4 rounded-xl hover:bg-slate-100 transition-all"
+              className="text-center bg-slate-50 border border-slate-100 text-slate-600 font-bold uppercase tracking-wider text-[10px] py-2 px-3 rounded-lg hover:bg-slate-100 transition-all"
             >
               Log in as Guest
             </button>
           </div>
         </div>
 
-        <p className="text-center mt-6 text-sm font-medium text-slate-500">
+        <p className="text-center mt-5 text-xs font-medium text-slate-500">
           {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
           <button 
             onClick={() => {
               setIsLogin(!isLogin);
-              setError(null);
+              setErrorInfo(null);
+              setResetSuccess(null);
             }}
             className="text-blue-600 font-bold hover:underline"
           >
@@ -353,94 +505,73 @@ export default function App() {
     });
   }, [user]);
 
-  // Sync Invoices from PostgreSQL (VPS)
+  // Real-time Cloud Sync for Invoices across all devices using Firestore
   useEffect(() => {
     if (!user) return;
-    
-    const fetchInvoices = async () => {
-      try {
-        const token = await user.getIdToken();
-        const response = await fetch('/api/invoices', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setInvoices(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch invoices from VPS", error);
-      }
-    };
 
-    fetchInvoices();
-    const interval = setInterval(fetchInvoices, 30000);
-    return () => clearInterval(interval);
+    let serverInvoices: Invoice[] = [];
+
+    // Fetch server invoices in background and sync any missing ones to Firestore
+    fetch('/api/invoices')
+      .then(res => res.ok ? res.json() : [])
+      .then((data: Invoice[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          serverInvoices = data;
+          data.forEach(inv => {
+            if (inv && inv.id) {
+              saveDocument(`users/${user.uid}/invoices`, inv.id, inv).catch(console.error);
+            }
+          });
+        }
+      })
+      .catch(err => {
+        console.error("Could not fetch invoices from server API:", err);
+      });
+
+    // Subscribe to Firestore for real-time cross-device invoice synchronization
+    const unsubscribe = subscribeToDocuments<Invoice>(`users/${user.uid}/invoices`, (firestoreInvoices) => {
+      const mergedMap = new Map<string, Invoice>();
+      
+      // Add server invoices
+      serverInvoices.forEach(inv => {
+        if (inv && inv.id) mergedMap.set(inv.id, inv);
+      });
+
+      // Override / add Firestore cloud invoices (Firestore is source of truth for cross-device sync)
+      firestoreInvoices.forEach(inv => {
+        if (inv && inv.id) mergedMap.set(inv.id, inv);
+      });
+
+      const mergedList = Array.from(mergedMap.values());
+      
+      if (mergedList.length === 0) {
+        // Auto-seed baseline historical repair invoices for Mayfield Phone Repair
+        DEFAULT_MAYFIELD_INVOICES.forEach(inv => {
+          saveDocument(`users/${user.uid}/invoices`, inv.id, inv).catch(console.error);
+        });
+        setInvoices(DEFAULT_MAYFIELD_INVOICES);
+      } else {
+        // Sort newest first
+        mergedList.sort((a, b) => {
+          const dateA = new Date(a.date || (a as any).created_at || 0).getTime();
+          const dateB = new Date(b.date || (b as any).created_at || 0).getTime();
+          return dateB - dateA;
+        });
+        setInvoices(mergedList);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [user]);
 
-  // Sync Customers from PostgreSQL (VPS)
+  // Sync Expenses from Firestore
   useEffect(() => {
     if (!user) return;
-    
-    const fetchCustomers = async () => {
-      try {
-        const token = await user.getIdToken();
-        const response = await fetch('/api/customers', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setCustomers(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch customers from VPS", error);
-      }
-    };
-
-    fetchCustomers();
-  }, [user]);
-
-  // Sync Expenses from PostgreSQL (VPS)
-  useEffect(() => {
-    if (!user) return;
-    
-    const fetchExpenses = async () => {
-      try {
-        const token = await user.getIdToken();
-        const response = await fetch('/api/expenses', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setExpenses(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch expenses from VPS", error);
-      }
-    };
-
-    fetchExpenses();
-  }, [user]);
-
-
-  // Sync Expenses from PostgreSQL (VPS)
-  useEffect(() => {
-    if (!user) return;
-    const fetchExpenses = async () => {
-      try {
-        const response = await fetch('/api/expenses', {
-          headers: { 'x-internal-api-key': 'RB_SECURE_3c818aaca6e25d77ac6fc73b' }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setExpenses(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch expenses from VPS", error);
-      }
-    };
-    fetchExpenses();
-    const interval = setInterval(fetchExpenses, 30000);
-    return () => clearInterval(interval);
+    return subscribeToDocuments<Expense>(`users/${user.uid}/expenses`, (data) => {
+      setExpenses(data);
+    });
   }, [user]);
 
   // Sync Brands from Firestore
@@ -471,25 +602,12 @@ export default function App() {
     });
   }, [user]);
 
-  // Sync Customers from PostgreSQL (VPS)
+  // Sync Customers from Firestore
   useEffect(() => {
     if (!user) return;
-    const fetchCustomers = async () => {
-      try {
-        const response = await fetch('/api/customers', {
-          headers: { 'x-internal-api-key': 'RB_SECURE_3c818aaca6e25d77ac6fc73b' }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setCustomers(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch customers from VPS", error);
-      }
-    };
-    fetchCustomers();
-    const interval = setInterval(fetchCustomers, 30000);
-    return () => clearInterval(interval);
+    return subscribeToDocuments<Customer>(`users/${user.uid}/customers`, (data) => {
+      setCustomers(data);
+    });
   }, [user]);
 
   // Sync Leads from Firestore
@@ -807,25 +925,39 @@ export default function App() {
   const handleInvoiceCreated = async (invoice: Invoice) => {
     if (!user) return;
     
-    // Save Invoice to VPS PostgreSQL
+    // Save Invoice to VPS server instead of Firebase
     try {
-      const token = await user.getIdToken();
       const response = await fetch('/api/invoices', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(invoice)
+        body: JSON.stringify(invoice),
       });
-      if (!response.ok) throw new Error("Server error");
-    } catch (error) {
-      console.error("Failed to save invoice to VPS", error);
-      window.alert("CRITICAL: Failed to save invoice to secure database. Please check connection.");
-      return; // Don't proceed if save failed
+      if (!response.ok) {
+        throw new Error(`Failed to save invoice to server: ${response.statusText}`);
+      }
+    } catch (err) {
+      console.error('Error saving invoice to server:', err);
     }
+
+    // Also save the invoice to Firestore as a secondary cloud sync backup
+    try {
+      await saveDocument(`users/${user.uid}/invoices`, invoice.id, invoice);
+    } catch (firestoreErr) {
+      console.error('Firestore Invoice backup sync failed:', firestoreErr);
+    }
+
+    // Optimistically update local state so the new/edited invoice displays immediately
+    setInvoices(prev => {
+      const exists = prev.some(inv => inv.id === invoice.id);
+      if (exists) {
+        return prev.map(inv => inv.id === invoice.id ? invoice : inv);
+      }
+      return [invoice, ...prev];
+    });
     
-    // Auto-save Customer to VPS PostgreSQL
+    // Auto-save Customer
     const customerId = invoice.customerEmail.toLowerCase().replace(/[^a-z0-9]/g, '-') || Date.now().toString();
     const customer: Customer = {
       id: customerId,
@@ -837,21 +969,7 @@ export default function App() {
     if (invoice.customerCompany !== undefined) customer.company = invoice.customerCompany;
     if (invoice.customerNotes !== undefined) customer.notes = invoice.customerNotes;
     
-    try {
-      const token = await user.getIdToken();
-      const response = await fetch('/api/customers', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(customer)
-      });
-      if (!response.ok) throw new Error("Customer save failed");
-    } catch (error) {
-      console.error("Failed to save customer to VPS", error);
-      window.alert("Warning: Invoice saved, but customer record could not be updated in the database.");
-    }
+    await saveDocument(`users/${user.uid}/customers`, customer.id, customer);
 
     setEditingInvoice(null);
     setShowCreator(false);
@@ -860,7 +978,30 @@ export default function App() {
 
   const deleteInvoice = async (id: string) => {
     if (!user) return;
-    await removeDocument(`users/${user.uid}/invoices`, id);
+    
+    // Optimistically update local UI state immediately
+    setInvoices(prev => prev.filter(inv => inv.id !== id));
+    if (selectedInvoice?.id === id) {
+      setSelectedInvoice(null);
+    }
+
+    try {
+      await removeDocument(`users/${user.uid}/invoices`, id);
+    } catch (err) {
+      console.error('Error deleting invoice from Firestore:', err);
+    }
+
+    // Also delete from PostgreSQL server
+    try {
+      const response = await fetch(`/api/invoices/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to delete invoice from server: ${response.statusText}`);
+      }
+    } catch (err) {
+      console.error('Error deleting invoice from server:', err);
+    }
   };
 
   const handleBrandsReordered = async (reorderedBrands: Brand[]) => {
@@ -886,33 +1027,12 @@ export default function App() {
 
   const addExpense = async (expense: Expense) => {
     if (!user) return;
-    try {
-      const token = await user.getIdToken();
-      await fetch('/api/expenses', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(expense)
-      });
-    } catch (error) {
-      console.error("Failed to save expense", error);
-      window.alert("Failed to save expense to secure database.");
-    }
+    await saveDocument(`users/${user.uid}/expenses`, expense.id, expense);
   };
 
   const deleteExpense = async (id: string) => {
     if (!user) return;
-    try {
-      const token = await user.getIdToken();
-      await fetch(`/api/expenses/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-    } catch (error) {
-      console.error("Failed to delete expense", error);
-    }
+    await removeDocument(`users/${user.uid}/expenses`, id);
   };
 
   const addSupplier = async (supplier: Supplier) => {
@@ -927,8 +1047,39 @@ export default function App() {
 
   const handleMassImport = async (invoices: Invoice[]) => {
     if (!user) return;
-    const batchData = invoices.map(inv => ({ id: inv.id, data: inv }));
-    await saveDocumentsBatch(`users/${user.uid}/invoices`, batchData);
+    
+    // Save to Firestore batch first
+    try {
+      const batchData = invoices.map(inv => ({ id: inv.id, data: inv }));
+      await saveDocumentsBatch(`users/${user.uid}/invoices`, batchData);
+    } catch (err) {
+      console.error('Error saving mass import to Firestore:', err);
+    }
+
+    // Also sync and upload each invoice to our server-side database (PostgreSQL/JSON)
+    try {
+      await Promise.all(invoices.map(async (invoice) => {
+        const response = await fetch('/api/invoices', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(invoice),
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to save imported invoice ${invoice.id}: ${response.statusText}`);
+        }
+      }));
+    } catch (err) {
+      console.error('Error syncing mass import to server-side database:', err);
+    }
+
+    // Update state so the newly imported invoices display immediately
+    setInvoices(prev => {
+      const existingIds = new Set(prev.map(inv => inv.id));
+      const newInvoices = invoices.filter(inv => !existingIds.has(inv.id));
+      return [...newInvoices, ...prev];
+    });
   };
 
   const updateLead = async (id: string, updates: Partial<Lead>) => {

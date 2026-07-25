@@ -5,11 +5,108 @@ import {
   signOut,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   updateProfile 
 } from 'firebase/auth';
 import { auth, signInWithGoogle } from '../lib/firebase';
 import { getDocument, saveDocument } from '../lib/firestore';
 import { AppUser } from '../lib/types';
+
+export function formatAuthError(err: any): { message: string; code?: string } {
+  if (!err) return { message: 'An unexpected authentication error occurred.' };
+  
+  const code = (err.code || '').toLowerCase();
+  const rawMsg = String(err.message || err || '').toLowerCase();
+
+  // Extract auth/xxx code if present in string like "Firebase: Error (auth/invalid-credential)."
+  const match = String(err.message || err).match(/auth\/([a-zA-Z0-9-]+)/);
+  const extractedCode = match ? `auth/${match[1]}` : code;
+
+  if (
+    extractedCode.includes('invalid-credential') || 
+    extractedCode.includes('user-not-found') || 
+    extractedCode.includes('wrong-password') ||
+    extractedCode.includes('invalid-login-credentials') ||
+    rawMsg.includes('invalid-credential') ||
+    rawMsg.includes('user-not-found') ||
+    rawMsg.includes('wrong-password')
+  ) {
+    return {
+      code: 'invalid-credential',
+      message: 'Incorrect email or password, or no account exists with this email yet. If you are new, click "Sign Up" below to create an account, or use Instant Sandbox Login.'
+    };
+  }
+
+  if (extractedCode.includes('email-already-in-use') || rawMsg.includes('email-already-in-use')) {
+    return {
+      code: 'email-already-in-use',
+      message: 'An account with this email address already exists. Please switch to "Log In" to access your account.'
+    };
+  }
+
+  if (extractedCode.includes('operation-not-allowed') || rawMsg.includes('operation-not-allowed')) {
+    return {
+      code: 'operation-not-allowed',
+      message: 'Email/Password sign-in is not enabled in Firebase Console yet. You can sign in using Google Auth or Instant Sandbox Login below!'
+    };
+  }
+
+  if (extractedCode.includes('invalid-email') || rawMsg.includes('invalid-email')) {
+    return {
+      code: 'invalid-email',
+      message: 'Please enter a valid email address.'
+    };
+  }
+
+  if (extractedCode.includes('weak-password') || rawMsg.includes('weak-password')) {
+    return {
+      code: 'weak-password',
+      message: 'Password is too weak. Please use at least 6 characters.'
+    };
+  }
+
+  if (extractedCode.includes('too-many-requests') || rawMsg.includes('too-many-requests')) {
+    return {
+      code: 'too-many-requests',
+      message: 'Access temporarily locked due to multiple failed login attempts. Please reset your password or try again later.'
+    };
+  }
+
+  if (extractedCode.includes('unauthorized-domain') || rawMsg.includes('authorized domain')) {
+    return {
+      code: 'unauthorized-domain',
+      message: 'This preview domain is not authorized in your Firebase console yet. You can use Google Auth or Instant Sandbox Login below!'
+    };
+  }
+
+  if (extractedCode.includes('network-request-failed') || rawMsg.includes('network-request-failed')) {
+    return {
+      code: 'network-request-failed',
+      message: 'Network connection failed. Please check your internet connection and try again.'
+    };
+  }
+
+  const cleanMsg = String(err.message || err).replace(/^Firebase:\s*Error\s*\(auth\/[^)]+\)\.?\s*/i, '').trim();
+  if (cleanMsg) {
+    return {
+      code: extractedCode || 'auth-error',
+      message: cleanMsg
+    };
+  }
+
+  if (match && match[1]) {
+    const formattedCodeName = match[1].replace(/-/g, ' ');
+    return {
+      code: extractedCode,
+      message: `Firebase Auth Error (${formattedCodeName}). Please check your login credentials or use Instant Sandbox Login below.`
+    };
+  }
+
+  return {
+    code: extractedCode || 'auth-error',
+    message: 'Authentication failed. Please verify your credentials or click Instant Sandbox Login below to test with full privileges.'
+  };
+}
 
 interface AuthContextType {
   user: User | null;
@@ -18,6 +115,7 @@ interface AuthContextType {
   signIn: () => Promise<void>;
   signInWithEmail: (email: string, pass: string) => Promise<void>;
   signUpWithEmail: (email: string, pass: string, name: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   signInDemo: (email?: string, name?: string) => void;
 }
@@ -146,9 +244,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    if (!email) throw new Error('Please enter your email address to reset password.');
+    await sendPasswordResetEmail(auth, email);
+  };
+
   const signInDemo = (email: string = 'mayfieldcellphonerepairs@gmail.com', name: string = 'Mayfield Repair Store') => {
+    // Deterministic UID based on email so invoices and shop data persist across sandbox logins
+    const cleanEmail = email.toLowerCase().trim().replace(/[^a-z0-9]/g, '-');
     const mockUser = {
-      uid: 'demo-user-id-' + Math.random().toString(36).substring(2, 7),
+      uid: `demo-user-${cleanEmail}`,
       email: email,
       displayName: name,
       photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop',
@@ -185,7 +290,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, logout, signInWithEmail, signUpWithEmail, signInDemo }}>
+    <AuthContext.Provider value={{ user, profile, loading, signIn, logout, signInWithEmail, signUpWithEmail, resetPassword, signInDemo }}>
       {children}
     </AuthContext.Provider>
   );

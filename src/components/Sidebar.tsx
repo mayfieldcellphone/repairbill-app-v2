@@ -205,9 +205,12 @@ export function Sidebar({ activeTab, setActiveTab, settings }: {
               )}>
                 {user?.displayName || 'Technician'}
               </p>
+              <p className="text-[9px] text-blue-600 font-semibold truncate leading-tight" title={user?.email || ''}>
+                {user?.email || 'No email'}
+              </p>
               <button 
                 onClick={() => logout()}
-                className="text-[9px] text-slate-400 font-bold uppercase truncate tracking-tighter text-left hover:text-red-500 transition-colors"
+                className="text-[9px] text-slate-400 font-bold uppercase truncate tracking-tighter text-left hover:text-red-500 transition-colors mt-0.5"
               >
                 Sign Out
               </button>

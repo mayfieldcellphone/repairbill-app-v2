@@ -9,18 +9,12 @@ import {
   sendPasswordResetEmail
 } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
+import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+export const db = (firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== '(default)') 
+  ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
+  : getFirestore(app);
 
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
@@ -42,16 +36,5 @@ export async function signInWithGoogle() {
   }
 }
 
-async function testConnection() {
-  try {
-    // Attempt to read a dummy doc to verify connection
-    await getDocFromServer(doc(db, '_connection_test_', 'check'));
-    console.log("Firebase connection verified");
-  } catch (error: any) {
-    if (error.message?.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration or internet connection.");
-    }
-  }
-}
+// Connection verification removed to prevent false startup error banners.
 
-testConnection();

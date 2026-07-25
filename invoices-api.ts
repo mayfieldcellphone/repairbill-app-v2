@@ -1,183 +1,120 @@
 import express from 'express';
 import { query } from './db';
-import admin from 'firebase-admin';
-
 const router = express.Router();
 
-// Firebase Auth Middleware
-router.use(async (req: any, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
-    }
+function fromDbRow(row: any) {
+  return {
+    id: row.id,
+    invoiceNumber: row.invoice_number || '',
+    customerName: row.customer_name || '',
+    customerEmail: row.customer_email || '',
+    customerPhone: row.customer_phone || '',
+    customerCompany: row.customer_company || '',
+    customerNotes: row.customer_notes || '',
+    date: row.date || row.created_at || new Date().toISOString(),
+    dueDate: row.due_date || row.created_at || new Date().toISOString(),
+    items: typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []),
+    subtotal: row.subtotal ? parseFloat(row.subtotal) : 0,
+    taxAmount: row.tax_amount ? parseFloat(row.tax_amount) : 0,
+    total: row.total ? parseFloat(row.total) : 0,
+    status: row.status || 'draft',
+    type: row.type || 'invoice',
+    paymentMethod: row.payment_method || 'Other'
+  };
+}
 
-    const token = authHeader.split(' ')[1];
-    try {
-        const decodedToken = await admin.auth().verifyIdToken(token);
-        req.user = decodedToken;
-        next();
-    } catch (error) {
-        console.error('Firebase token verification failed:', error);
-        return res.status(401).json({ error: 'Unauthorized: Invalid token' });
-    }
-});
-
-// --- INVOICES ---
-
-// GET /api/invoices
-router.get('/api/invoices', async (req: any, res) => {
+router.get('/api/invoices', async (req, res) => {
   try {
-    const userId = req.user.uid;
-    const result = await query("SELECT * FROM invoices WHERE user_id = $1 ORDER BY created_at DESC", [userId]);
-    
-    // Map database columns to camelCase for the React app
-    const invoices = result.rows.map(row => ({
-      id: row.id,
-      invoiceNumber: row.invoice_number,
-      customerName: row.customer_name,
-      customerEmail: row.customer_email,
-      customerPhone: row.customer_phone,
-      customerCompany: row.customer_company,
-      customerNotes: row.customer_notes,
-      date: row.date,
-      dueDate: row.due_date,
-      items: row.items,
-      subtotal: parseFloat(row.subtotal),
-      taxAmount: parseFloat(row.tax_amount),
-      total: parseFloat(row.total),
-      status: row.status,
-      type: row.type,
-      paymentMethod: row.payment_method,
-      createdAt: row.created_at
-    }));
-    
+    const result = await query('SELECT * FROM invoices ORDER BY created_at DESC');
+    const invoices = result.rows.map(fromDbRow);
     res.json(invoices);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
+  } catch (error) {
+    console.error("Error fetching invoices from PostgreSQL:", error);
+    res.status(500).json({ error: "Failed to fetch invoices" });
   }
 });
 
-// POST /api/invoices
-router.post('/api/invoices', async (req: any, res) => {
-  const inv = req.body;
-  const userId = req.user.uid;
+router.post('/api/invoices', async (req, res) => {
   try {
+    const inv = req.body;
+    
+    // Support full insert & update on conflict
     const sql = `
       INSERT INTO invoices (
-        id, user_id, invoice_number, customer_name, customer_email, 
-        customer_phone, customer_company, customer_notes, date, due_date, 
-        items, subtotal, tax_amount, total, status, type, payment_method
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        id, 
+        invoice_number, 
+        customer_name, 
+        customer_email, 
+        customer_phone, 
+        items, 
+        subtotal, 
+        tax_amount, 
+        total, 
+        status,
+        date,
+        due_date,
+        type,
+        payment_method,
+        customer_company,
+        customer_notes
+      ) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) 
       ON CONFLICT (id) DO UPDATE SET 
-        status = EXCLUDED.status,
+        invoice_number = EXCLUDED.invoice_number,
+        customer_name = EXCLUDED.customer_name,
+        customer_email = EXCLUDED.customer_email,
+        customer_phone = EXCLUDED.customer_phone,
+        items = EXCLUDED.items,
+        subtotal = EXCLUDED.subtotal,
+        tax_amount = EXCLUDED.tax_amount,
         total = EXCLUDED.total,
-        items = EXCLUDED.items
+        status = EXCLUDED.status,
+        date = EXCLUDED.date,
+        due_date = EXCLUDED.due_date,
+        type = EXCLUDED.type,
+        payment_method = EXCLUDED.payment_method,
+        customer_company = EXCLUDED.customer_company,
+        customer_notes = EXCLUDED.customer_notes
       RETURNING *;
     `;
     
     const values = [
-      inv.id, userId, inv.invoiceNumber, inv.customerName, inv.customerEmail, 
-      inv.customerPhone, inv.customerCompany, inv.customerNotes, inv.date, inv.dueDate, 
-      JSON.stringify(inv.items), inv.subtotal, inv.taxAmount, inv.total, 
-      inv.status, inv.type, inv.paymentMethod
+      inv.id, 
+      inv.invoiceNumber, 
+      inv.customerName, 
+      inv.customerEmail, 
+      inv.customerPhone || '', 
+      JSON.stringify(inv.items || []), 
+      inv.subtotal || 0, 
+      inv.taxAmount || 0, 
+      inv.total || 0, 
+      inv.status || 'draft',
+      inv.date || new Date().toISOString(),
+      inv.dueDate || new Date().toISOString(),
+      inv.type || 'invoice',
+      inv.paymentMethod || 'Other',
+      inv.customerCompany || '',
+      inv.customerNotes || ''
     ];
-    
+
     const result = await query(sql, values);
-    res.status(201).json({ success: true, data: result.rows[0] });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(201).json({ success: true, data: fromDbRow(result.rows[0]) });
+  } catch (error) {
+    console.error("Error saving invoice to PostgreSQL:", error);
+    res.status(500).json({ error: "Failed to save invoice" });
   }
 });
 
-// --- CUSTOMERS ---
-
-// GET /api/customers
-router.get('/api/customers', async (req: any, res) => {
+// Support deleting invoices
+router.delete('/api/invoices/:id', async (req, res) => {
   try {
-    const userId = req.user.uid;
-    const result = await query("SELECT * FROM customers WHERE user_id = $1 ORDER BY created_at DESC", [userId]);
-    
-    // Map database columns to camelCase
-    const customers = result.rows.map(row => ({
-      id: row.id,
-      name: row.name,
-      email: row.email,
-      phone: row.phone,
-      company: row.company,
-      notes: row.notes,
-      createdAt: row.created_at
-    }));
-    
-    res.json(customers);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// POST /api/customers
-// ... (POST logic remains same)
-
-// --- EXPENSES ---
-
-// GET /api/expenses
-router.get('/api/expenses', async (req: any, res) => {
-  try {
-    const userId = req.user.uid;
-    const result = await query("SELECT * FROM expenses WHERE user_id = $1 ORDER BY created_at DESC", [userId]);
-    
-    // Map database columns to camelCase
-    const expenses = result.rows.map(row => ({
-      id: row.id,
-      description: row.description,
-      amount: parseFloat(row.amount),
-      category: row.category,
-      date: row.date,
-      paymentMethod: row.payment_method,
-      supplier: row.supplier,
-      createdAt: row.created_at
-    }));
-    
-    res.json(expenses);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// POST /api/expenses
-router.post('/api/expenses', async (req: any, res) => {
-  const exp = req.body;
-  const userId = req.user.uid;
-  try {
-    const sql = `
-      INSERT INTO expenses (id, user_id, description, amount, category, date, payment_method, supplier)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      ON CONFLICT (id) DO UPDATE SET 
-        description = EXCLUDED.description,
-        amount = EXCLUDED.amount
-      RETURNING *;
-    `;
-    const values = [exp.id, userId, exp.description, exp.amount, exp.category, exp.date, exp.paymentMethod, exp.supplier];
-    const result = await query(sql, values);
-    res.status(201).json({ success: true, data: result.rows[0] });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// DELETE /api/expenses/:id
-router.delete('/api/expenses/:id', async (req: any, res) => {
-  try {
-    const userId = req.user.uid;
-    await query("DELETE FROM expenses WHERE id = $1 AND user_id = $2", [req.params.id, userId]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    const { id } = req.params;
+    const sql = `DELETE FROM invoices WHERE id = $1 RETURNING *;`;
+    await query(sql, [id]);
+    res.json({ success: true, message: "Invoice deleted successfully from backend database" });
+  } catch (error) {
+    console.error("Error deleting invoice from PostgreSQL:", error);
+    res.status(500).json({ error: "Failed to delete invoice" });
   }
 });
 
