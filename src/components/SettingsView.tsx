@@ -1,3 +1,7 @@
+https://raw.githubusercontent.com/mayfieldcellphone/repairbill-app-v2/main/src/components/SettingsView.tsx
+→ https://raw.githubusercontent.com/mayfieldcellphone/repairbill-app-v2/main/src/components/SettingsView.tsx
+Content-Type: text/plain; charset=utf-8
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -628,7 +632,7 @@ fetch("${window.location.origin}/api/web-integration/leads", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    "Authorization": "Bearer ${profile?.apiKey || 'YOUR_API_KEY'}"
+    "Authorization": "Bearer YOUR_WEB_LEAD_API_KEY"
   },
   body: JSON.stringify({
     customerName: document.getElementById("name").value,
@@ -644,7 +648,7 @@ fetch("${window.location.origin}/api/web-integration/leads", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    "Authorization": "Bearer ${profile?.apiKey || 'YOUR_API_KEY'}"
+    "Authorization": "Bearer YOUR_WEB_LEAD_API_KEY"
   },
   body: JSON.stringify({
     customerName: "Customer Name",
@@ -691,34 +695,6 @@ fetch("${window.location.origin}/api/web-integration/leads", {
                 </div>
               </div>
 
-              {/* Website Lead Widget Integration */}
-              <div className="bg-card rounded-2xl p-6 text-card-foreground space-y-6 border border-border">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600">
-                    <Zap size={20} />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-sm uppercase tracking-widest">Live Widget Connection</h3>
-                    <p className="text-[10px] text-muted-foreground font-bold uppercase">External widget & third-party lead sync</p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Lead / Sync API Key</Label>
-                    <Input 
-                      type="password"
-                      placeholder="sync_live_..."
-                      value={localSettings.charlaApiKey || ''}
-                      onChange={(e) => setLocalSettings({ ...localSettings, charlaApiKey: e.target.value })}
-                      className="rounded-xl h-11 bg-background border-border"
-                    />
-                    <p className="text-[10px] text-muted-foreground font-medium italic">
-                      If you use an external lead ingestion widget or custom live forms, enter the API key here to sync leads automatically.
-                    </p>
-                  </div>
-                </div>
-              </div>
             </TabsContent>
 
             <TabsContent value="ai-voice" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2">

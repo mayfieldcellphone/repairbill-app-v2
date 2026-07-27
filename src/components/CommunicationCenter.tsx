@@ -16,11 +16,10 @@ import {
   ArrowRight,
   FileText,
   ArrowUpRight,
-  Plus,
-  RefreshCw
+  Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Lead, InvoiceSettings } from '../lib/types';
+import { Lead, LeadReply, InvoiceSettings } from '../lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -31,6 +30,7 @@ interface CommunicationCenterProps {
   onAddLead: (lead: Lead) => Promise<void>;
   onDeleteLead: (id: string) => Promise<void>;
   onConvertToQuote: (lead: Lead) => void;
+  onSendReply: (id: string, message: string) => Promise<void>;
 }
 
 export function CommunicationCenter({ 
@@ -39,7 +39,8 @@ export function CommunicationCenter({
   onUpdateLead, 
   onAddLead,
   onDeleteLead,
-  onConvertToQuote
+  onConvertToQuote,
+  onSendReply
 }: CommunicationCenterProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'contact' | 'quote' | 'booking' | 'corporate' | 'voice_message'>('all');
@@ -47,7 +48,6 @@ export function CommunicationCenter({
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [isReplying, setIsReplying] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
 
   const theme = settings.appTheme;
 
@@ -74,94 +74,16 @@ export function CommunicationCenter({
     }
   };
 
-  const handleSyncLeads = async () => {
-    if (!settings.charlaApiKey) {
-      alert("Please configure your Live Lead API Key in Settings to sync live leads.");
-      return;
-    }
-
-    setIsSyncing(true);
-    try {
-      const response = await fetch('https://charla.com/api/v1/leads', {
-        headers: {
-          'Authorization': `Bearer ${settings.charlaApiKey}`
-        }
-      });
-      
-      if (!response.ok) throw new Error('Failed to fetch leads from Live Lead API');
-      
-      const data = await response.json();
-      
-      let newLeadsCount = 0;
-      for (const item of data) {
-        // Check if lead already exists to avoid duplicates
-        if (!leads.find(l => l.id === item.id)) {
-          const newLead: Lead = {
-            id: item.id || `lead-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-            customerName: item.name || 'Anonymous',
-            customerEmail: item.email || 'no-email@incoming-sync.com',
-            customerPhone: item.phone || '',
-            message: item.message || '',
-            type: item.metadata?.type || 'contact',
-            status: 'new',
-            createdAt: item.createdAt || new Date().toISOString(),
-            metadata: {
-              source: item.metadata?.source || 'web-widget',
-              brand: item.metadata?.brand,
-              model: item.metadata?.model,
-              recordingDuration: item.metadata?.recordingDuration,
-              companyName: item.metadata?.companyName
-            }
-          };
-          await onAddLead(newLead);
-          newLeadsCount++;
-        }
-      }
-      
-      alert(`Sync successful! Imported ${newLeadsCount} new leads from your website widget.`);
-    } catch (error) {
-      console.error('Sync error:', error);
-      alert('Failed to sync with Live Lead API. Please ensure your API key is correct.');
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
   const handleSendReply = async () => {
     if (!selectedLead || !replyText.trim() || isReplying) return;
     
     setIsReplying(true);
     try {
-      // If Live Lead API key is configured, send the reply there as well
-      if (settings.charlaApiKey) {
-        const response = await fetch('https://charla.com/api/v1/replies', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${settings.charlaApiKey}`
-          },
-          body: JSON.stringify({
-            leadId: selectedLead.id,
-            to: selectedLead.customerEmail,
-            message: replyText,
-            metadata: {
-              source: 'RepairBill Pro',
-              convertedFrom: selectedLead.type
-            }
-          })
-        });
-
-        if (!response.ok) {
-          console.warn('Live Lead API reply failed, but updating local status anyway.');
-        }
-      }
-
-      await onUpdateLead(selectedLead.id, { status: 'replied' });
+      await onSendReply(selectedLead.id, replyText.trim());
       setReplyText('');
-      alert(`Reply sent to ${selectedLead.customerName} via ${settings.charlaApiKey ? 'Website API' : 'local system'}.`);
     } catch (error) {
       console.error('Error sending reply:', error);
-      alert('Failed to send reply. Please check your connection and API key.');
+      alert('Failed to send reply. Please check your connection and try again.');
     } finally {
       setIsReplying(false);
     }
@@ -227,22 +149,9 @@ export function CommunicationCenter({
               "text-xs font-black uppercase tracking-widest text-slate-400",
               theme === 'cyber' && "text-cyan-400/50"
             )}>Messages</h3>
-            <div className="flex gap-1.5">
-              <button 
-                onClick={handleSyncLeads}
-                disabled={isSyncing}
-                className={cn(
-                  "p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all",
-                  isSyncing && "animate-spin text-blue-600"
-                )}
-                title="Sync live website leads"
-              >
-                <RefreshCw size={14} />
-              </button>
-              <span className="bg-blue-100 text-blue-600 text-[10px] font-black px-2 py-0.5 rounded-full">
-                {leads.filter(l => l.status === 'new').length} New
-              </span>
-            </div>
+            <span className="bg-blue-100 text-blue-600 text-[10px] font-black px-2 py-0.5 rounded-full">
+              {leads.filter(l => l.status === 'new').length} New
+            </span>
           </div>
 
           <div className="relative">
@@ -499,12 +408,26 @@ export function CommunicationCenter({
                     )}
                   </div>
 
-                  {selectedLead.status === 'replied' && (
-                    <div className="mb-8 flex items-center gap-3 bg-emerald-50 p-4 rounded-2xl border border-emerald-100 text-emerald-700">
-                      <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center text-white scale-75">
-                        <CheckCircle size={20} />
-                      </div>
-                      <span className="text-[11px] font-black uppercase tracking-widest">You successfully replied to this lead</span>
+                  {/* Reply Thread — full conversation history stored on the lead itself */}
+                  {selectedLead.replies && selectedLead.replies.length > 0 && (
+                    <div className="mb-10 space-y-4">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                        <CheckCircle size={14} className="text-emerald-500" /> Conversation ({selectedLead.replies.length})
+                      </p>
+                      {selectedLead.replies.map((reply: LeadReply) => (
+                        <div 
+                          key={reply.id}
+                          className={cn(
+                            "bg-blue-600 text-white p-6 rounded-[2rem] rounded-tr-lg ml-auto max-w-xl shadow-lg shadow-blue-200",
+                            theme === 'cyber' && "bg-cyan-500 text-slate-900 shadow-cyan-500/20"
+                          )}
+                        >
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">{reply.message}</p>
+                          <p className="text-[10px] mt-3 opacity-70 font-bold uppercase tracking-widest">
+                            {reply.author} · {format(new Date(reply.createdAt), 'MMM d, h:mm a')}
+                          </p>
+                        </div>
+                      ))}
                     </div>
                   )}
 
@@ -523,7 +446,7 @@ export function CommunicationCenter({
                        </div>
                        <div>
                          <h3 className="text-sm font-black uppercase tracking-widest text-white">Craft Response</h3>
-                         <p className="text-[10px] text-white/40 font-bold uppercase">Sending to {selectedLead.customerEmail}</p>
+                         <p className="text-[10px] text-white/40 font-bold uppercase">Reply saved to this conversation</p>
                        </div>
                     </div>
 
@@ -547,9 +470,9 @@ export function CommunicationCenter({
                         )}
                        >
                          {isReplying ? (
-                           <>Processing... <Clock size={16} className="animate-spin" /></>
+                           <>Saving... <Clock size={16} className="animate-spin" /></>
                          ) : (
-                           <>Dispatch Response <ArrowRight size={16} /></>
+                           <>Save Reply <ArrowRight size={16} /></>
                          )}
                        </button>
                     </div>
@@ -564,7 +487,7 @@ export function CommunicationCenter({
               <Mail size={32} className="opacity-20" />
             </div>
             <p className="text-sm font-black uppercase tracking-[0.2em]">Select a conversation</p>
-            <p className="text-xs mt-2 text-slate-400 font-medium">Messages from mayfieldphonerepair.com.au pop up here</p>
+            <p className="text-xs mt-2 text-slate-400 font-medium">Messages from your website widget pop up here</p>
           </div>
         )}
       </div>

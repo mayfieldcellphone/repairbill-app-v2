@@ -33,6 +33,7 @@ const navItems = [
   { id: 'reports', icon: <PieChart size={20} />, label: 'Reports' },
   { id: 'bas', icon: <Activity size={20} />, label: 'Tax / BAS' },
   { id: 'ai-agent', icon: <Sparkles size={20} />, label: 'AI Assistant' },
+  { id: 'inbox', icon: <Mail size={20} />, label: 'Inbox' },
   { id: 'customers', icon: <Users size={20} />, label: 'Customers' },
   { id: 'catalog', icon: <Smartphone size={20} />, label: 'Catalog' },
   { id: 'import', icon: <Upload size={20} />, label: 'Import' },
