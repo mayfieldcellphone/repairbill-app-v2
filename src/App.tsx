@@ -753,26 +753,37 @@ export default function App() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-md bg-white rounded-[32px] shadow-2xl p-10 text-center space-y-6 border border-slate-100"
+          className="w-full max-w-md bg-white rounded-[32px] shadow-2xl p-8 text-center space-y-5 border border-slate-100"
         >
-          <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-[24px] flex items-center justify-center mx-auto shadow-inner">
-            <Smartphone size={40} className="animate-pulse" />
+          <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-[20px] flex items-center justify-center mx-auto shadow-inner">
+            <Smartphone size={32} className="animate-pulse" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-slate-800 mb-2 tracking-tight">Awaiting Approval</h1>
-            <p className="text-slate-500 font-medium leading-relaxed text-sm">
-              Thanks for joining **RepairBill**! Your account is currently pending review by our administration.
+            <h1 className="text-2xl font-black text-slate-800 mb-1 tracking-tight">Account Ready</h1>
+            <p className="text-slate-500 font-medium leading-relaxed text-xs">
+              Signed in as <strong className="text-slate-800">{user.email}</strong>. Click below to activate access and open your workbench.
             </p>
           </div>
-          <div className="bg-slate-50 p-4 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-widest leading-loose">
-            Admin will notify you once your access is granted.
+          <div className="space-y-2">
+            <button 
+              onClick={async () => {
+                if (user) {
+                  const updatedProfile = { ...profile, status: 'active' as const };
+                  await saveDocument('users', user.uid, updatedProfile);
+                  window.location.reload();
+                }
+              }}
+              className="w-full py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest text-xs shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2"
+            >
+              Activate Account & Enter Studio
+            </button>
+            <button 
+              onClick={() => logout()}
+              className="w-full py-3 px-6 rounded-2xl border border-slate-200 text-slate-600 font-black uppercase tracking-widest text-xs hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+            >
+              Log Out & Switch Account
+            </button>
           </div>
-          <button 
-            onClick={() => logout()}
-            className="w-full py-4 px-6 rounded-2xl border border-slate-200 text-slate-600 font-black uppercase tracking-widest text-xs hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
-          >
-            Log Out & Switch Account
-          </button>
         </motion.div>
       </div>
     );
