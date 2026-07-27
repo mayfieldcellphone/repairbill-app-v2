@@ -1,7 +1,3 @@
-https://raw.githubusercontent.com/mayfieldcellphone/repairbill-app-v2/main/src/App.tsx
-→ https://raw.githubusercontent.com/mayfieldcellphone/repairbill-app-v2/main/src/App.tsx
-Content-Type: text/plain; charset=utf-8
-
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Plus, 
