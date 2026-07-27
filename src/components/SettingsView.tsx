@@ -1,7 +1,3 @@
-https://raw.githubusercontent.com/mayfieldcellphone/repairbill-app-v2/main/src/components/SettingsView.tsx
-→ https://raw.githubusercontent.com/mayfieldcellphone/repairbill-app-v2/main/src/components/SettingsView.tsx
-Content-Type: text/plain; charset=utf-8
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
