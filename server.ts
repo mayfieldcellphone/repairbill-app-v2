@@ -8,6 +8,7 @@ import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
 import OpenAI from "openai";
 import invoicesRouter from "./invoices-api";
 import leadsRouter, { ensureLeadsTable } from "./leads-api";
+import authRouter, { ensureBusinessesTable } from "./auth-api";
 import { ensureInvoicesTable } from "./db";
 
 const createInvoiceTool: FunctionDeclaration = {
@@ -119,10 +120,18 @@ async function startServer() {
     console.warn("[PostgreSQL] Skipping leads schema initialization (database might not be running locally):", dbError);
   }
 
+  try {
+    await ensureBusinessesTable();
+    console.log("[PostgreSQL] Businesses table checked and ready.");
+  } catch (dbError) {
+    console.warn("[PostgreSQL] Skipping businesses schema initialization (database might not be running locally):", dbError);
+  }
+
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   // Register Invoice + Leads routers
+  app.use(authRouter);
   app.use(invoicesRouter);
   app.use(leadsRouter);
 

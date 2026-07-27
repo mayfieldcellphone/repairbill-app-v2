@@ -1,10 +1,13 @@
 import express from 'express';
 import { query } from './db';
+import { requireAuth } from './auth-api';
+
 const router = express.Router();
 
 function fromDbRow(row: any) {
   return {
     id: row.id,
+    businessId: row.business_id || null,
     invoiceNumber: row.invoice_number || '',
     customerName: row.customer_name || '',
     customerEmail: row.customer_email || '',
@@ -23,9 +26,9 @@ function fromDbRow(row: any) {
   };
 }
 
-router.get('/api/invoices', async (req, res) => {
+router.get('/api/invoices', requireAuth, async (req: any, res) => {
   try {
-    const result = await query('SELECT * FROM invoices ORDER BY created_at DESC');
+    const result = await query('SELECT * FROM invoices WHERE business_id = $1 ORDER BY created_at DESC', [req.businessId]);
     const invoices = result.rows.map(fromDbRow);
     res.json(invoices);
   } catch (error) {
@@ -34,32 +37,25 @@ router.get('/api/invoices', async (req, res) => {
   }
 });
 
-router.post('/api/invoices', async (req, res) => {
+router.post('/api/invoices', requireAuth, async (req: any, res) => {
   try {
     const inv = req.body;
-    
-    // Support full insert & update on conflict
+
+    if (inv.id) {
+      const existing = await query('SELECT business_id FROM invoices WHERE id = $1', [inv.id]);
+      if (existing.rows.length > 0 && existing.rows[0].business_id && existing.rows[0].business_id !== req.businessId) {
+        return res.status(403).json({ error: 'Not allowed to modify this invoice' });
+      }
+    }
+
     const sql = `
       INSERT INTO invoices (
-        id, 
-        invoice_number, 
-        customer_name, 
-        customer_email, 
-        customer_phone, 
-        items, 
-        subtotal, 
-        tax_amount, 
-        total, 
-        status,
-        date,
-        due_date,
-        type,
-        payment_method,
-        customer_company,
-        customer_notes
-      ) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) 
-      ON CONFLICT (id) DO UPDATE SET 
+        id, invoice_number, customer_name, customer_email, customer_phone, items,
+        subtotal, tax_amount, total, status, date, due_date, type, payment_method,
+        customer_company, customer_notes, business_id
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+      ON CONFLICT (id) DO UPDATE SET
         invoice_number = EXCLUDED.invoice_number,
         customer_name = EXCLUDED.customer_name,
         customer_email = EXCLUDED.customer_email,
@@ -77,24 +73,13 @@ router.post('/api/invoices', async (req, res) => {
         customer_notes = EXCLUDED.customer_notes
       RETURNING *;
     `;
-    
+
     const values = [
-      inv.id, 
-      inv.invoiceNumber, 
-      inv.customerName, 
-      inv.customerEmail, 
-      inv.customerPhone || '', 
-      JSON.stringify(inv.items || []), 
-      inv.subtotal || 0, 
-      inv.taxAmount || 0, 
-      inv.total || 0, 
-      inv.status || 'draft',
-      inv.date || new Date().toISOString(),
-      inv.dueDate || new Date().toISOString(),
-      inv.type || 'invoice',
-      inv.paymentMethod || 'Other',
-      inv.customerCompany || '',
-      inv.customerNotes || ''
+      inv.id, inv.invoiceNumber, inv.customerName, inv.customerEmail, inv.customerPhone || '',
+      JSON.stringify(inv.items || []), inv.subtotal || 0, inv.taxAmount || 0, inv.total || 0,
+      inv.status || 'draft', inv.date || new Date().toISOString(), inv.dueDate || new Date().toISOString(),
+      inv.type || 'invoice', inv.paymentMethod || 'Other', inv.customerCompany || '', inv.customerNotes || '',
+      req.businessId
     ];
 
     const result = await query(sql, values);
@@ -105,12 +90,11 @@ router.post('/api/invoices', async (req, res) => {
   }
 });
 
-// Support deleting invoices
-router.delete('/api/invoices/:id', async (req, res) => {
+router.delete('/api/invoices/:id', requireAuth, async (req: any, res) => {
   try {
     const { id } = req.params;
-    const sql = `DELETE FROM invoices WHERE id = $1 RETURNING *;`;
-    await query(sql, [id]);
+    const sql = `DELETE FROM invoices WHERE id = $1 AND business_id = $2 RETURNING *;`;
+    await query(sql, [id, req.businessId]);
     res.json({ success: true, message: "Invoice deleted successfully from backend database" });
   } catch (error) {
     console.error("Error deleting invoice from PostgreSQL:", error);
