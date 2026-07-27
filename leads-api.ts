@@ -2,6 +2,7 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { pool } from './db';
+import { sendReplyEmail } from './mailer';
 
 const router = express.Router();
 
@@ -164,7 +165,8 @@ router.patch('/api/leads/:id', async (req, res) => {
   }
 });
 
-// POST a reply — appends to the conversation thread and marks status 'replied'
+// POST a reply — appends to the conversation thread, marks status 'replied',
+// and emails the customer (if SMTP is configured and we have their email).
 router.post('/api/leads/:id/replies', async (req, res) => {
   const { id } = req.params;
   const { message, author } = req.body;
@@ -177,6 +179,8 @@ router.post('/api/leads/:id/replies', async (req, res) => {
     createdAt: new Date().toISOString()
   };
 
+  let updatedLead: any = null;
+
   try {
     if (!isValidDbUrl) throw new Error('NO_DB');
     const existingResult = await pool.query('SELECT * FROM leads WHERE id = $1', [id]);
@@ -187,7 +191,7 @@ router.post('/api/leads/:id/replies', async (req, res) => {
       `UPDATE leads SET replies=$2, status='replied', updated_at=$3 WHERE id=$1 RETURNING *;`,
       [id, JSON.stringify(replies), new Date().toISOString()]
     );
-    return res.json({ success: true, data: fromDbRow(result.rows[0]) });
+    updatedLead = fromDbRow(result.rows[0]);
   } catch {
     const leads = loadLeadsFromJSON();
     const idx = leads.findIndex((l: any) => l.id === id);
@@ -196,8 +200,19 @@ router.post('/api/leads/:id/replies', async (req, res) => {
     leads[idx].status = 'replied';
     leads[idx].updatedAt = new Date().toISOString();
     saveLeadsToJSON(leads);
-    res.json({ success: true, data: leads[idx] });
+    updatedLead = leads[idx];
   }
+
+  const emailResult = await sendReplyEmail({
+    to: updatedLead.customerEmail,
+    customerName: updatedLead.customerName,
+    message
+  });
+  if (!emailResult.sent) {
+    console.warn(`[Leads] Reply saved for ${id} but email not sent: ${emailResult.error}`);
+  }
+
+  return res.json({ success: true, data: updatedLead, emailSent: emailResult.sent, emailError: emailResult.error });
 });
 
 // DELETE a lead
