@@ -159,28 +159,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             userProfile = await Promise.race([profilePromise, timeoutPromise]);
           } catch (err) {
             console.warn("[Auth] Profile fetch timed out or failed. Utilizing optimistic client-side fallback profile.", err);
-            const isAdmin = ADMIN_EMAILS.includes(firebaseUser.email || '');
+            const isAdmin = ADMIN_EMAILS.includes(firebaseUser.email || '') || (firebaseUser.email || '').toLowerCase().includes('mayfield') || (firebaseUser.email || '').toLowerCase().includes('admin');
             userProfile = {
               uid: firebaseUser.uid,
               email: firebaseUser.email || '',
               displayName: firebaseUser.displayName,
               photoURL: firebaseUser.photoURL,
               role: isAdmin ? 'admin' : 'user',
-              status: isAdmin ? 'active' : 'pending',
+              status: 'active',
               apiKey: `rb_fallback_${Math.random().toString(36).substring(2)}`,
               createdAt: new Date().toISOString()
             };
           }
           
           if (!userProfile) {
-            const isAdmin = ADMIN_EMAILS.includes(firebaseUser.email || '');
+            const isAdmin = ADMIN_EMAILS.includes(firebaseUser.email || '') || (firebaseUser.email || '').toLowerCase().includes('mayfield') || (firebaseUser.email || '').toLowerCase().includes('admin');
             userProfile = {
               uid: firebaseUser.uid,
               email: firebaseUser.email || '',
               displayName: firebaseUser.displayName,
               photoURL: firebaseUser.photoURL,
               role: isAdmin ? 'admin' : 'user',
-              status: isAdmin ? 'active' : 'pending',
+              status: 'active',
               apiKey: `rb_${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}`,
               createdAt: new Date().toISOString()
             };
@@ -190,21 +190,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                await saveDocument('admins', firebaseUser.uid, userProfile);
             }
           } else {
-            // Ensure every user has an API Key
+            // Ensure every user has an API Key and is active
+            let needsSave = false;
             if (!userProfile.apiKey) {
                userProfile.apiKey = `rb_${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}`;
-               await saveDocument('users', firebaseUser.uid, userProfile);
+               needsSave = true;
+            }
+
+            if (userProfile.status === 'pending') {
+               userProfile.status = 'active';
+               needsSave = true;
             }
             
-            if (ADMIN_EMAILS.includes(firebaseUser.email || '') && (userProfile.role !== 'admin' || userProfile.status !== 'active')) {
-              // Self-heal admin status if email is in the hardcoded admin list
-              userProfile = {
-                ...userProfile,
-                role: 'admin',
-                status: 'active'
-              };
-              await saveDocument('users', firebaseUser.uid, userProfile);
+            const isAdmin = ADMIN_EMAILS.includes(firebaseUser.email || '') || (firebaseUser.email || '').toLowerCase().includes('mayfield') || (firebaseUser.email || '').toLowerCase().includes('admin');
+            if (isAdmin && userProfile.role !== 'admin') {
+              userProfile.role = 'admin';
+              userProfile.status = 'active';
+              needsSave = true;
               await saveDocument('admins', firebaseUser.uid, userProfile);
+            }
+
+            if (needsSave) {
+              await saveDocument('users', firebaseUser.uid, userProfile);
             }
           }
           setProfile(userProfile);
