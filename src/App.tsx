@@ -63,6 +63,7 @@ import { AIPanelLeadsFeed } from './components/AIPanelLeadsFeed';
 import { CommunicationCenter } from './components/CommunicationCenter';
 import { useAuth, formatAuthError } from './contexts/AuthContext';
 import { saveDocument, saveDocumentsBatch, removeDocument, subscribeToDocuments } from './lib/firestore';
+import { bootstrapBusinessSession, apiFetch } from './lib/api';
 
 const DEFAULT_MAYFIELD_INVOICES: Invoice[] = [
   {
@@ -468,6 +469,7 @@ export default function App() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [businessReady, setBusinessReady] = useState(false);
   const [settings, setSettings] = useState<InvoiceSettings>({
     companyName: 'Mayfield Phone Repair',
     address: '123 Repair St, Tech City',
@@ -495,6 +497,18 @@ export default function App() {
   });
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
 
+  useEffect(() => {
+    if (!user) { setBusinessReady(false); return; }
+    let cancelled = false;
+    bootstrapBusinessSession(user.uid, settings.companyName || user.displayName || user.email || undefined)
+      .then(() => { if (!cancelled) setBusinessReady(true); })
+      .catch(err => {
+        console.error('[Business] Failed to bootstrap business session:', err);
+        if (!cancelled) setBusinessReady(false);
+      });
+    return () => { cancelled = true; };
+  }, [user]);
+
   // Sync Settings from Firestore
   useEffect(() => {
     if (!user) return;
@@ -507,12 +521,12 @@ export default function App() {
 
   // Real-time Cloud Sync for Invoices across all devices using Firestore
   useEffect(() => {
-    if (!user) return;
+    if (!user || !businessReady) return;
 
     let serverInvoices: Invoice[] = [];
 
     // Fetch server invoices in background and sync any missing ones to Firestore
-    fetch('/api/invoices')
+    apiFetch('/api/invoices')
       .then(res => res.ok ? res.json() : [])
       .then((data: Invoice[]) => {
         if (Array.isArray(data) && data.length > 0) {
@@ -613,7 +627,7 @@ export default function App() {
   // Load Leads from Postgres-backed API (migrated off Firestore/Firebase)
   const refreshLeads = async () => {
     try {
-      const res = await fetch('/api/leads');
+      const res = await apiFetch('/api/leads');
       if (res.ok) {
         const data = await res.json();
         setLeads(data);
@@ -624,11 +638,11 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !businessReady) return;
     refreshLeads();
     const interval = setInterval(refreshLeads, 30000);
     return () => clearInterval(interval);
-  }, [user]);
+  }, [user, businessReady]);
 
   // Sync Services from Firestore
   useEffect(() => {
@@ -950,7 +964,7 @@ export default function App() {
     
     // Save Invoice to VPS server instead of Firebase
     try {
-      const response = await fetch('/api/invoices', {
+      const response = await apiFetch('/api/invoices', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1016,7 +1030,7 @@ export default function App() {
 
     // Also delete from PostgreSQL server
     try {
-      const response = await fetch(`/api/invoices/${id}`, {
+      const response = await apiFetch(`/api/invoices/${id}`, {
         method: 'DELETE',
       });
       if (!response.ok) {
@@ -1082,7 +1096,7 @@ export default function App() {
     // Also sync and upload each invoice to our server-side database (PostgreSQL/JSON)
     try {
       await Promise.all(invoices.map(async (invoice) => {
-        const response = await fetch('/api/invoices', {
+        const response = await apiFetch('/api/invoices', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1112,7 +1126,7 @@ export default function App() {
     const merged = { ...lead, ...updates };
     setLeads(prev => prev.map(l => l.id === id ? merged : l));
     try {
-      await fetch(`/api/leads/${id}`, {
+      await apiFetch(`/api/leads/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
@@ -1126,7 +1140,7 @@ export default function App() {
     if (!user) return;
     setLeads(prev => [lead, ...prev]);
     try {
-      const res = await fetch('/api/leads', {
+      const res = await apiFetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(lead)
@@ -1144,7 +1158,7 @@ export default function App() {
     if (!user) return;
     setLeads(prev => prev.filter(l => l.id !== id));
     try {
-      await fetch(`/api/leads/${id}`, { method: 'DELETE' });
+      await apiFetch(`/api/leads/${id}`, { method: 'DELETE' });
     } catch (err) {
       console.error('[Leads] Failed to delete lead:', err);
     }
@@ -1153,7 +1167,7 @@ export default function App() {
   const sendReplyToLead = async (id: string, message: string) => {
     if (!user) return;
     try {
-      const res = await fetch(`/api/leads/${id}/replies`, {
+      const res = await apiFetch(`/api/leads/${id}/replies`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, author: settings.companyName || 'Team' })
@@ -1516,6 +1530,7 @@ export default function App() {
                        onUpdateLead={updateLead}
                        onDeleteLead={deleteLead}
                        onConvertToQuote={handleConvertToQuote}
+                       onSendReply={sendReplyToLead}
                     />
                   </div>
                 </div>
