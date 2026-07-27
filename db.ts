@@ -3,18 +3,20 @@ import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
 
-const connectionString = process.env.DATABASE_URL || 'postgres://repairbill_user:22UyeLThWKxxe3Wd@localhost:5432/repairbill_db';
-const isRemoteDb = Boolean(process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost') && !process.env.DATABASE_URL.includes('127.0.0.1'));
+const rawDbUrl = process.env.DATABASE_URL;
+const isValidDbUrl = Boolean(rawDbUrl && (rawDbUrl.startsWith('postgres://') || rawDbUrl.startsWith('postgresql://')));
+const connectionString = isValidDbUrl ? rawDbUrl! : 'postgres://repairbill_user:22UyeLThWKxxe3Wd@localhost:5432/repairbill_db';
+const isRemoteDb = Boolean(isValidDbUrl && !rawDbUrl!.includes('localhost') && !rawDbUrl!.includes('127.0.0.1'));
 
-if (process.env.DATABASE_URL) {
+if (isValidDbUrl) {
   console.log('[PostgreSQL] Using DATABASE_URL from secrets/environment for database connections.');
 } else {
-  console.log('[PostgreSQL] DATABASE_URL not detected in environment, using default fallback connection.');
+  console.log('[PostgreSQL] Valid DATABASE_URL not detected in environment, using local JSON storage mode.');
 }
 
 const pool = new Pool({ 
   connectionString,
-  connectionTimeoutMillis: isRemoteDb ? 10000 : 2000,
+  connectionTimeoutMillis: isRemoteDb ? 10000 : 1000,
   ...(isRemoteDb ? { ssl: { rejectUnauthorized: false } } : {})
 });
 
@@ -44,14 +46,10 @@ function saveToJSON(invoices: any[]) {
 
 // Intercept queries and provide file fallback
 export const query = async (text: string, params?: any[]): Promise<any> => {
-  try {
-    // Try PostgreSQL
-    return await pool.query(text, params);
-  } catch (pgError: any) {
-    console.warn(`[PostgreSQL Query Failed - falling back to JSON storage]: ${pgError.message || pgError}`);
-    
-    const cleanText = text.trim().toUpperCase();
+  const cleanText = text.trim().toUpperCase();
 
+  // Helper for JSON storage logic
+  const handleJsonStorage = () => {
     // Intercept SELECT
     if (cleanText.startsWith('SELECT')) {
       const invoices = loadFromJSON();
@@ -134,10 +132,28 @@ export const query = async (text: string, params?: any[]): Promise<any> => {
     
     // Default fallback
     return { rows: [] };
+  };
+
+  if (!isValidDbUrl) {
+    return handleJsonStorage();
+  }
+
+  try {
+    // Try PostgreSQL if URL was configured
+    return await pool.query(text, params);
+  } catch (pgError: any) {
+    return handleJsonStorage();
   }
 };
 
 export async function ensureInvoicesTable() {
+  if (!isValidDbUrl) {
+    if (!fs.existsSync(JSON_FILE_PATH)) {
+      saveToJSON([]);
+    }
+    return;
+  }
+
   try {
     const schema = `
       CREATE TABLE IF NOT EXISTS invoices (
@@ -172,8 +188,6 @@ export async function ensureInvoicesTable() {
       }
     }
   } catch (dbError: any) {
-    console.warn("[PostgreSQL] Local database connection failed during schema init. Using local JSON fallback instead:", dbError.message || dbError);
-    // Ensure file exists
     if (!fs.existsSync(JSON_FILE_PATH)) {
       saveToJSON([]);
     }
