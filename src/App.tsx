@@ -1,3 +1,7 @@
+https://raw.githubusercontent.com/mayfieldcellphone/repairbill-app-v2/main/src/App.tsx
+→ https://raw.githubusercontent.com/mayfieldcellphone/repairbill-app-v2/main/src/App.tsx
+Content-Type: text/plain; charset=utf-8
+
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Plus, 
@@ -60,6 +64,7 @@ import { UserManagement } from './components/UserManagement';
 import { ReportsView } from './components/ReportsView';
 
 import { AIPanelLeadsFeed } from './components/AIPanelLeadsFeed';
+import { CommunicationCenter } from './components/CommunicationCenter';
 import { useAuth, formatAuthError } from './contexts/AuthContext';
 import { saveDocument, saveDocumentsBatch, removeDocument, subscribeToDocuments } from './lib/firestore';
 
@@ -485,7 +490,6 @@ export default function App() {
     warrantyPeriod: '90 Days',
     appTheme: 'modern',
     taxInclusive: true,
-    charlaApiKey: '',
     creationFlowOrder: 'brand-first',
     aiProvider: 'gemini',
     geminiApiKey: '',
@@ -610,12 +614,24 @@ export default function App() {
     });
   }, [user]);
 
-  // Sync Leads from Firestore
+  // Load Leads from Postgres-backed API (migrated off Firestore/Firebase)
+  const refreshLeads = async () => {
+    try {
+      const res = await fetch('/api/leads');
+      if (res.ok) {
+        const data = await res.json();
+        setLeads(data);
+      }
+    } catch (err) {
+      console.error('[Leads] Failed to load leads from API:', err);
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
-    return subscribeToDocuments<Lead>(`users/${user.uid}/leads`, (data) => {
-      setLeads(data);
-    });
+    refreshLeads();
+    const interval = setInterval(refreshLeads, 30000);
+    return () => clearInterval(interval);
   }, [user]);
 
   // Sync Services from Firestore
@@ -1097,17 +1113,62 @@ export default function App() {
     if (!user) return;
     const lead = leads.find(l => l.id === id);
     if (!lead) return;
-    await saveDocument(`users/${user.uid}/leads`, id, { ...lead, ...updates });
+    const merged = { ...lead, ...updates };
+    setLeads(prev => prev.map(l => l.id === id ? merged : l));
+    try {
+      await fetch(`/api/leads/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+    } catch (err) {
+      console.error('[Leads] Failed to update lead:', err);
+    }
   };
 
   const addLead = async (lead: Lead) => {
     if (!user) return;
-    await saveDocument(`users/${user.uid}/leads`, lead.id, lead);
+    setLeads(prev => [lead, ...prev]);
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lead)
+      });
+      if (res.ok) {
+        const { data } = await res.json();
+        setLeads(prev => prev.map(l => l.id === lead.id ? data : l));
+      }
+    } catch (err) {
+      console.error('[Leads] Failed to add lead:', err);
+    }
   };
 
   const deleteLead = async (id: string) => {
     if (!user) return;
-    await removeDocument(`users/${user.uid}/leads`, id);
+    setLeads(prev => prev.filter(l => l.id !== id));
+    try {
+      await fetch(`/api/leads/${id}`, { method: 'DELETE' });
+    } catch (err) {
+      console.error('[Leads] Failed to delete lead:', err);
+    }
+  };
+
+  const sendReplyToLead = async (id: string, message: string) => {
+    if (!user) return;
+    try {
+      const res = await fetch(`/api/leads/${id}/replies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, author: settings.companyName || 'Team' })
+      });
+      if (res.ok) {
+        const { data } = await res.json();
+        setLeads(prev => prev.map(l => l.id === id ? data : l));
+      }
+    } catch (err) {
+      console.error('[Leads] Failed to send reply:', err);
+    }
   };
 
   const handleConvertToQuote = (lead: Lead) => {
@@ -1217,7 +1278,8 @@ export default function App() {
                )}
              </div>
             <h1 className="text-base sm:text-lg font-black text-foreground tracking-tight leading-tight">
-              {activeTab === 'dashboard' ? 'Daily Ops' : 
+              {activeTab === 'dashboard' ? 'Daily Ops' :
+               activeTab === 'inbox' ? 'Communication Hub' :
                activeTab === 'catalog' ? 'Product Catalog' :
                activeTab === 'expenses' ? 'Expense & Supplier tracking' :
                activeTab === 'bas' ? 'BAS Tax Calculation' :
@@ -1461,6 +1523,24 @@ export default function App() {
                     />
                   </div>
                 </div>
+              </motion.div>
+            ) : activeTab === 'inbox' ? (
+              <motion.div
+                key="inbox"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="max-w-7xl mx-auto"
+              >
+                <CommunicationCenter
+                  leads={leads}
+                  settings={settings}
+                  onUpdateLead={updateLead}
+                  onAddLead={addLead}
+                  onDeleteLead={deleteLead}
+                  onConvertToQuote={handleConvertToQuote}
+                  onSendReply={sendReplyToLead}
+                />
               </motion.div>
             ) : activeTab === 'customers' ? (
               <motion.div
