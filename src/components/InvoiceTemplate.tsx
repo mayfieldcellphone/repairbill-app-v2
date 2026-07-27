@@ -55,6 +55,7 @@ export function InvoiceTemplate({ invoice, settings, id, className }: InvoiceTem
               <p className={companyNameClass}>{settings.companyName}</p>
             )}
             <p className="text-xs text-slate-500">{settings.address}</p>
+            {settings.abn && <p className="text-[10px] text-slate-500 font-bold">ABN: {settings.abn}</p>}
             <p className="text-[10px] text-slate-500/70">{settings.website}</p>
           </div>
         </div>
@@ -174,6 +175,7 @@ export function InvoiceTemplate({ invoice, settings, id, className }: InvoiceTem
               <p className="text-slate-500">{settings.phone}</p>
               <p className="text-slate-500">{settings.website}</p>
               <p className="text-slate-500">{settings.email}</p>
+              {settings.abn && <p className="text-slate-500 font-bold mt-1">ABN: {settings.abn}</p>}
             </div>
             <div>
               <p className="font-black text-slate-900 mb-4 uppercase tracking-widest text-[9px] border-b border-slate-200 pb-1">Recipient</p>
@@ -257,6 +259,7 @@ export function InvoiceTemplate({ invoice, settings, id, className }: InvoiceTem
              <p>{settings.address}</p>
              <p>{settings.phone} • {settings.email}</p>
              {settings.website && <p>{settings.website}</p>}
+             {settings.abn && <p className="font-bold">ABN: {settings.abn}</p>}
            </div>
         </div>
         <div className="text-right space-y-1">

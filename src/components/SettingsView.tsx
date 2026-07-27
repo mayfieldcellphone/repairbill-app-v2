@@ -453,6 +453,15 @@ export function SettingsView({ settings, setSettings, onBrandsReordered, onCatal
                     className="rounded-xl h-11 bg-card border-border"
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-foreground">ABN</Label>
+                  <Input 
+                    value={localSettings.abn || ''}
+                    onChange={(e) => setLocalSettings({ ...localSettings, abn: e.target.value })}
+                    placeholder="11 222 333 444"
+                    className="rounded-xl h-11 bg-card border-border"
+                  />
+                </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label className="text-sm font-bold text-foreground">Physical Address</Label>
                   <Input 
@@ -880,6 +889,7 @@ fetch("${window.location.origin}/api/web-integration/leads", {
                         <p>{localSettings.address}</p>
                         <p>{localSettings.phone} • {localSettings.website}</p>
                         <p>{localSettings.email}</p>
+                        {localSettings.abn && <p className="font-bold">ABN: {localSettings.abn}</p>}
                       </div>
                     </div>
                     <div className="text-right">
@@ -961,6 +971,7 @@ fetch("${window.location.origin}/api/web-integration/leads", {
                       <h4 className="font-bold border-b border-border mb-2 uppercase tracking-tighter">Bill From</h4>
                       <p className="font-medium">{localSettings.email}</p>
                       <p>{localSettings.phone}</p>
+                      {localSettings.abn && <p className="font-bold mt-1">ABN: {localSettings.abn}</p>}
                     </div>
                     <div className="text-right">
                       <h4 className="font-bold border-b border-border mb-2 uppercase tracking-tighter">Order Info</h4>
@@ -1033,6 +1044,7 @@ fetch("${window.location.origin}/api/web-integration/leads", {
                         <p className="text-muted-foreground">{localSettings.phone}</p>
                         <p className="text-muted-foreground">{localSettings.website}</p>
                         <p className="text-muted-foreground">{localSettings.email}</p>
+                        {localSettings.abn && <p className="text-muted-foreground font-bold mt-1">ABN: {localSettings.abn}</p>}
                       </div>
                       <div>
                         <p className="font-black text-foreground mb-4 uppercase tracking-widest text-[9px] border-b border-border pb-1">Recipient</p>
