@@ -223,8 +223,24 @@ router.delete('/api/leads/:id', async (req, res) => {
  *
  * Set WEB_LEAD_API_KEY in your server environment (e.g. PM2 env config),
  * then use that same value as the Bearer token from your website.
+ *
+ * CORS: this endpoint is called directly from third-party browser tabs
+ * (the customer's own website, e.g. mayfieldphonerepair.com.au), so it needs
+ * its own permissive CORS headers — it does NOT rely on cookies/credentials,
+ * only a Bearer API key, so Access-Control-Allow-Origin: * is safe here.
  */
+router.options('/api/web-integration/leads', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.sendStatus(204);
+});
+
 router.post('/api/web-integration/leads', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
   let apiKey = req.headers['authorization']?.toString().replace('Bearer ', '');
   if (!apiKey) apiKey = req.query.apiKey as string;
 
