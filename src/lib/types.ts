@@ -109,6 +109,7 @@ export interface InvoiceSettings {
   email: string;
   phone: string;
   website: string;
+  abn?: string;
   primaryColor: string;
   fontFamily: 'sans' | 'serif' | 'mono';
   template: 'modern' | 'classic' | 'minimalist';
