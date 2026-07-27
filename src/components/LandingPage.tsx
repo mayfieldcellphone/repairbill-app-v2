@@ -378,18 +378,27 @@ export function LandingPage() {
             </button>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => {
+                signInDemo('mayfieldcellphonerepairs@gmail.com', 'Mayfield Repair Owner');
+              }}
+              className="hidden sm:flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-3.5 py-1.5 rounded-full text-xs font-black hover:bg-emerald-100 transition-all"
+            >
+              <Sparkles size={14} className="text-emerald-500 animate-pulse" />
+              Instant Sandbox
+            </button>
             <button 
               onClick={() => { setIsLogin(true); setShowAuthModal(true); }}
-              className="text-sm font-bold text-slate-600 hover:text-blue-600 px-4 py-2"
+              className="text-sm font-bold text-slate-600 hover:text-blue-600 px-3 py-2"
             >
               Log In
             </button>
             <button 
               onClick={() => { setIsLogin(false); setShowAuthModal(true); }}
-              className="bg-blue-600 text-white px-6 py-2.5 rounded-full text-sm font-black tracking-tight shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
+              className="bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-black tracking-tight shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
             >
-              Get Started Free
+              Sign Up
             </button>
           </div>
         </div>
@@ -417,13 +426,19 @@ export function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-4">
               <button 
                 onClick={() => { setIsLogin(false); setShowAuthModal(true); }}
-                className="bg-slate-900 text-white px-10 py-5 rounded-2xl text-lg font-black tracking-tight shadow-2xl hover:bg-black transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-3 group"
+                className="bg-slate-900 text-white px-8 py-4 rounded-2xl text-base font-black tracking-tight shadow-2xl hover:bg-black transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-3 group"
               >
                 Create Your Shop
-                <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </button>
-              <button className="bg-white border-2 border-slate-100 text-slate-600 px-10 py-5 rounded-2xl text-lg font-black tracking-tight hover:bg-slate-50 transition-all">
-                Book a Demo
+              <button 
+                onClick={() => {
+                  signInDemo('mayfieldcellphonerepairs@gmail.com', 'Mayfield Repair Owner');
+                }}
+                className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-base font-black tracking-tight shadow-xl shadow-emerald-200 hover:bg-emerald-700 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+              >
+                <Sparkles size={18} className="animate-pulse text-emerald-200" />
+                Instant Sandbox Mode
               </button>
             </div>
             
@@ -1114,12 +1129,36 @@ export function LandingPage() {
               <Smartphone className="rotate-45" size={20} />
             </button>
 
-            <div className="text-center mb-6 space-y-1">
-              <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-blue-100">
-                 <Shield size={28} className="text-white" />
+            <div className="text-center mb-5 space-y-1">
+              <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-2 shadow-lg shadow-blue-100">
+                 <Shield size={24} className="text-white" />
               </div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">{isLogin ? 'Welcome Back' : 'Create Your Shop'}</h2>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">{isLogin ? 'Welcome Back' : 'Create Your Shop'}</h2>
               <p className="text-slate-400 text-xs font-medium">Enter your details to securely access your studio.</p>
+            </div>
+
+            {/* Log In / Create Account Segmented Control */}
+            <div className="flex bg-slate-100 p-1 rounded-2xl mb-5 border border-slate-200/60">
+              <button
+                type="button"
+                onClick={() => { setIsLogin(true); setErrorInfo(null); }}
+                className={cn(
+                  "flex-1 py-2.5 rounded-xl font-black text-xs transition-all uppercase tracking-wider",
+                  isLogin ? "bg-white text-slate-900 shadow-md" : "text-slate-500 hover:text-slate-800"
+                )}
+              >
+                Log In
+              </button>
+              <button
+                type="button"
+                onClick={() => { setIsLogin(false); setErrorInfo(null); }}
+                className={cn(
+                  "flex-1 py-2.5 rounded-xl font-black text-xs transition-all uppercase tracking-wider",
+                  !isLogin ? "bg-blue-600 text-white shadow-md shadow-blue-200" : "text-slate-500 hover:text-slate-800"
+                )}
+              >
+                Create Account
+              </button>
             </div>
 
             {resetSuccess && (
