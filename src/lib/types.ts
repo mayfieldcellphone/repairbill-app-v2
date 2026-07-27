@@ -126,7 +126,6 @@ export interface InvoiceSettings {
   logo?: string;
   hideCompanyName?: boolean;
   companyNameSize?: 'sm' | 'md' | 'lg' | 'xl';
-  charlaApiKey?: string;
   creationFlowOrder?: 'brand-first' | 'service-first';
   dashboardServiceIds?: string[];
   dashboardBrandIds?: string[];
@@ -167,6 +166,13 @@ export interface Invoice {
   paymentMethod?: 'Cash' | 'Card' | 'Bank Transfer' | 'Other';
 }
 
+export interface LeadReply {
+  id: string;
+  message: string;
+  author: string;
+  createdAt: string;
+}
+
 export interface Lead {
   id: string;
   customerName: string;
@@ -177,6 +183,8 @@ export interface Lead {
   type: 'contact' | 'quote' | 'booking' | 'corporate' | 'voice_message';
   status: 'new' | 'read' | 'replied' | 'archived';
   createdAt: string;
+  updatedAt?: string;
+  replies?: LeadReply[];
   metadata?: {
     source?: string;
     brand?: string;
