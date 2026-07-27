@@ -20,6 +20,10 @@ const pool = new Pool({
   ...(isRemoteDb ? { ssl: { rejectUnauthorized: false } } : {})
 });
 
+// Exported so other modules (e.g. leads-api.ts) can reuse the same connection pool
+// and implement their own table-specific JSON-file fallback logic.
+export { pool };
+
 const JSON_FILE_PATH = path.join(process.cwd(), 'invoices.json');
 
 // Helper to load invoices from JSON
