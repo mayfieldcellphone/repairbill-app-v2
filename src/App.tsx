@@ -500,7 +500,8 @@ export default function App() {
   useEffect(() => {
     if (!user) { setBusinessReady(false); return; }
     let cancelled = false;
-    bootstrapBusinessSession(user.uid, settings.companyName || user.displayName || user.email || undefined)
+    const stableBusinessId = user.email ? `demo-user-${user.email.toLowerCase().trim().replace(/[^a-z0-9]/g, '-')}` : user.uid;
+    bootstrapBusinessSession(stableBusinessId, settings.companyName || user.displayName || user.email || undefined)
       .then(() => { if (!cancelled) setBusinessReady(true); })
       .catch(err => {
         console.error('[Business] Failed to bootstrap business session:', err);
@@ -578,7 +579,7 @@ export default function App() {
     return () => {
       unsubscribe();
     };
-  }, [user]);
+  }, [user, businessReady]);
 
   // Sync Expenses from Firestore
   useEffect(() => {
@@ -1251,14 +1252,14 @@ export default function App() {
   return (
     <div 
       className={cn(
-        "flex min-h-screen bg-slate-50 font-sans transition-colors duration-500",
+        "flex min-h-screen bg-slate-50 font-sans transition-colors duration-500 overflow-x-hidden",
         settings?.appTheme === 'cyber' && "theme-cyber dark bg-slate-950",
         settings?.appTheme === 'minimalist' && "theme-minimalist bg-[#fdfcfa]"
       )}
     >
       <div 
         className={cn(
-          "flex-1 flex min-h-screen bg-transparent",
+          "flex-1 flex min-h-screen bg-transparent overflow-x-hidden",
           settings?.appTheme === 'minimalist' && "max-w-[1600px] mx-auto border-x border-slate-100"
         )}
       >
@@ -1366,7 +1367,7 @@ export default function App() {
         )}
 
         {/* Dashboard Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 sm:pb-6">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 pb-24 sm:pb-6">
           <AnimatePresence mode="wait">
             {activeTab === 'dashboard' ? (
               <motion.div 

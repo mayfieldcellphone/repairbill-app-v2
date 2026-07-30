@@ -3,12 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@radix-ui/react-label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, EyeOff, Search, Palette, Type, Building2, Save, CreditCard, FileText, Check, Smartphone, Plus, Trash2, LayoutDashboard, Code, Copy, Zap, GripVertical, TrendingUp, Cpu, Pin } from 'lucide-react';
+import { Eye, EyeOff, Search, Palette, Type, Building2, Save, CreditCard, FileText, Check, Smartphone, Plus, Trash2, LayoutDashboard, Code, Copy, Zap, GripVertical, TrendingUp, Cpu, Pin, MessageSquare, Mail, RefreshCw } from 'lucide-react';
 import { InvoiceSettings, Brand, ProductSeries, ProductModel, RepairService } from '../lib/types';
 import { getBrandCatalog, saveCustomBrand, saveCustomModel, saveBrandOrder } from '../lib/deviceStore';
 import { REPAIR_SERVICES, getSavedServices } from '../lib/serviceData';
 import { cn } from '@/lib/utils';
 import { useAuth } from '../contexts/AuthContext';
+import { apiFetch, getBusinessProfile } from '../lib/api';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import firebaseConfig from '../../firebase-applet-config.json';
 import { db } from '../lib/firebase';
@@ -34,6 +35,96 @@ export function SettingsView({ settings, setSettings, onBrandsReordered, onCatal
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const [bizProfile, setBizProfile] = useState<any>(() => getBusinessProfile());
+  const [senderNameDraft, setSenderNameDraft] = useState<string>('');
+  const [senderEmailDraft, setSenderEmailDraft] = useState<string>('');
+  const [savingBiz, setSavingBiz] = useState(false);
+  const [bizSaveMsg, setBizSaveMsg] = useState('');
+  const [rotatingKey, setRotatingKey] = useState(false);
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiFetch('/api/me');
+        if (res.ok) {
+          const data = await res.json();
+          setBizProfile(data);
+          setSenderNameDraft(data.senderName || '');
+          setSenderEmailDraft(data.senderEmail || '');
+        }
+      } catch (err) {
+        console.error('Failed to load business profile', err);
+      }
+    })();
+  }, []);
+
+  const handleSaveWidget = async () => {
+    setSavingBiz(true);
+    setBizSaveMsg('');
+    try {
+      const res = await apiFetch('/api/me', {
+        method: 'PATCH',
+        body: JSON.stringify({ widgetColor: bizProfile?.widgetColor }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setBizProfile(json.data);
+        setBizSaveMsg('Saved!');
+      } else {
+        setBizSaveMsg('Failed to save.');
+      }
+    } catch (err) {
+      setBizSaveMsg('Failed to save.');
+    } finally {
+      setSavingBiz(false);
+      setTimeout(() => setBizSaveMsg(''), 3000);
+    }
+  };
+
+  const handleSaveEmail = async () => {
+    setSavingBiz(true);
+    setBizSaveMsg('');
+    try {
+      const res = await apiFetch('/api/me', {
+        method: 'PATCH',
+        body: JSON.stringify({ senderName: senderNameDraft, senderEmail: senderEmailDraft }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setBizProfile(json.data);
+        setBizSaveMsg('Saved!');
+      } else {
+        setBizSaveMsg('Failed to save.');
+      }
+    } catch (err) {
+      setBizSaveMsg('Failed to save.');
+    } finally {
+      setSavingBiz(false);
+      setTimeout(() => setBizSaveMsg(''), 3000);
+    }
+  };
+
+  const handleRotateWidgetKey = async () => {
+    if (!window.confirm('Rotate your widget key? Any website embed using the old key will stop working until you update it.')) return;
+    setRotatingKey(true);
+    try {
+      const res = await apiFetch('/api/me/rotate-widget-key', { method: 'POST' });
+      if (res.ok) {
+        const json = await res.json();
+        setBizProfile(json.data);
+      }
+    } catch (err) {
+      console.error('Failed to rotate widget key', err);
+    } finally {
+      setRotatingKey(false);
+    }
+  };
+
+  const handleCopySnippet = () => {
+    const snippet = '<script\n  src="' + window.location.origin + '/repairbill-widget.js"\n  data-api-key="' + (bizProfile?.widgetApiKey || '') + '"\n  data-company="' + (bizProfile?.senderName || bizProfile?.name || '') + '"\n  data-color="' + (bizProfile?.widgetColor || '#2563eb') + '">\n</script>';
+    navigator.clipboard.writeText(snippet);
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -166,6 +257,8 @@ export function SettingsView({ settings, setSettings, onBrandsReordered, onCatal
                   { id: 'business', icon: Building2, label: 'Profile' },
                   { id: 'financial', icon: CreditCard, label: 'Finance' },
                   { id: 'integration', icon: Zap, label: 'Website' },
+                  { id: 'widget', icon: MessageSquare, label: 'Widget' },
+                  { id: 'email', icon: Mail, label: 'Email' },
                   { id: 'ai-voice', icon: Cpu, label: 'AI Voice' },
                 ].map((tab) => (
                   <TabsTrigger 
@@ -693,7 +786,154 @@ fetch("${window.location.origin}/api/web-integration/leads", {
 
             </TabsContent>
 
-            <TabsContent value="ai-voice" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+            <TabsContent value="widget" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+          <Card className="bg-card border-border rounded-2xl">
+            <CardHeader>
+              <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+                <MessageSquare size={16} /> Website Chat Widget
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <p className="text-sm text-muted-foreground">
+                Paste this snippet before the closing <code className="bg-muted px-1 rounded">&lt;/body&gt;</code> tag on your website to let visitors send you messages directly from your site.
+              </p>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-foreground">Widget Color</Label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={bizProfile?.widgetColor || '#2563eb'}
+                    onChange={(e) => setBizProfile((prev: any) => ({ ...prev, widgetColor: e.target.value }))}
+                    className="h-11 w-16 rounded-xl border border-border bg-card cursor-pointer"
+                  />
+                  <Input
+                    value={bizProfile?.widgetColor || '#2563eb'}
+                    onChange={(e) => setBizProfile((prev: any) => ({ ...prev, widgetColor: e.target.value }))}
+                    className="rounded-xl h-11 bg-card border-border flex-1"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-foreground">Widget API Key</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    readOnly
+                    value={bizProfile?.widgetApiKey || 'Loading...'}
+                    className="rounded-xl h-11 bg-muted border-border font-mono text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { navigator.clipboard.writeText(bizProfile?.widgetApiKey || ''); }}
+                    className="h-11 px-3 rounded-xl border border-border bg-card hover:bg-muted transition-colors"
+                    title="Copy key"
+                  >
+                    <Copy size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={rotatingKey}
+                    onClick={handleRotateWidgetKey}
+                    className="h-11 px-3 rounded-xl border border-border bg-card hover:bg-muted transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-widest disabled:opacity-50"
+                    title="Rotate key"
+                  >
+                    <RefreshCw size={14} className={rotatingKey ? 'animate-spin' : ''} /> Rotate
+                  </button>
+                </div>
+                <p className="text-[10px] text-muted-foreground italic">Rotating your key immediately breaks any widget embed using the old key.</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-foreground">Embed Snippet</Label>
+                <div className="relative group">
+                  <pre className="bg-muted rounded-xl p-4 text-[11px] overflow-x-auto whitespace-pre-wrap break-all">
+{`<script
+  src="${window.location.origin}/repairbill-widget.js"
+  data-api-key="${bizProfile?.widgetApiKey || 'YOUR_WIDGET_KEY'}"
+  data-company="${bizProfile?.senderName || bizProfile?.name || 'Your Business'}"
+  data-color="${bizProfile?.widgetColor || '#2563eb'}">
+</script>`}
+                  </pre>
+                  <button
+                    type="button"
+                    onClick={handleCopySnippet}
+                    className="absolute top-3 right-3 bg-card/80 hover:bg-card p-2 rounded-lg border border-border transition-all opacity-0 group-hover:opacity-100"
+                  >
+                    <Copy size={14} />
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSaveWidget}
+                disabled={savingBiz}
+                className="h-11 px-6 rounded-xl bg-primary text-primary-foreground font-bold text-sm uppercase tracking-widest hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+              >
+                <Save size={16} /> {savingBiz ? 'Saving...' : 'Save Widget Color'}
+              </button>
+              {bizSaveMsg && <p className="text-xs font-bold text-emerald-600">{bizSaveMsg}</p>}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="email" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+          <Card className="bg-card border-border rounded-2xl">
+            <CardHeader>
+              <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+                <Mail size={16} /> Outbound Email
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <p className="text-sm text-muted-foreground">
+                Emails sent from the Inbox (quotes, invoices, replies) go out under this name and address.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-foreground">Sender Name</Label>
+                  <Input
+                    value={senderNameDraft}
+                    onChange={(e) => setSenderNameDraft(e.target.value)}
+                    placeholder="Your Business Name"
+                    className="rounded-xl h-11 bg-card border-border"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-foreground">Sender Email</Label>
+                  <Input
+                    value={senderEmailDraft}
+                    onChange={(e) => setSenderEmailDraft(e.target.value)}
+                    placeholder="you@yourbusiness.com"
+                    className="rounded-xl h-11 bg-card border-border"
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-1">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Resend Domain Status</p>
+                <p className="text-sm">
+                  {bizProfile?.resendDomainStatus === 'verified'
+                    ? 'Verified — outbound email is sending via Resend.'
+                    : 'Not connected yet. Once a Resend account and domain are added, emails will send via Resend instead of raw SMTP.'}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSaveEmail}
+                disabled={savingBiz}
+                className="h-11 px-6 rounded-xl bg-primary text-primary-foreground font-bold text-sm uppercase tracking-widest hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+              >
+                <Save size={16} /> {savingBiz ? 'Saving...' : 'Save Email Settings'}
+              </button>
+              {bizSaveMsg && <p className="text-xs font-bold text-emerald-600">{bizSaveMsg}</p>}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ai-voice" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2">
               <div className="bg-card rounded-2xl p-6 text-card-foreground space-y-6 border border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950/40 flex items-center justify-center text-purple-600 dark:text-purple-400">

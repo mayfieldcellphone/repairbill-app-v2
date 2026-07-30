@@ -140,15 +140,16 @@ router.get('/api/me', requireAuth, async (req: any, res) => {
 });
 
 router.patch('/api/me', requireAuth, async (req: any, res) => {
-  const { name, senderName, widgetColor } = req.body;
+  const { name, senderName, widgetColor, senderEmail } = req.body;
   try {
     const result = await pool.query(
       `UPDATE businesses SET
         name = COALESCE($2, name),
         sender_name = COALESCE($3, sender_name),
-        widget_color = COALESCE($4, widget_color)
+        widget_color = COALESCE($4, widget_color),
+        sender_email = COALESCE($5, sender_email)
        WHERE id = $1 RETURNING *;`,
-      [req.businessId, name, senderName, widgetColor]
+      [req.businessId, name, senderName, widgetColor, senderEmail]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Business not found' });
     res.json({ success: true, data: fromBusinessRow(result.rows[0]) });
