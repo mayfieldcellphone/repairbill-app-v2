@@ -115,6 +115,12 @@ export function InvoiceTemplate({ invoice, settings, id, className }: InvoiceTem
                  </div>
                </>
             )}
+            {!!invoice.discountAmount && invoice.discountAmount > 0 && (
+              <div className="flex justify-between text-sm py-1">
+                <span>Discount:</span>
+                <span>-{formatPrice(invoice.discountAmount)}</span>
+              </div>
+            )}
             <div className="flex justify-between border-t-2 border-slate-900 pt-2 font-bold text-lg">
               <span>{settings.taxInclusive ? 'Total (Inc. GST):' : 'Total:'}</span>
               <span>{formatPrice(invoice.total)}</span>
@@ -202,16 +208,26 @@ export function InvoiceTemplate({ invoice, settings, id, className }: InvoiceTem
         </div>
 
         <div className="mt-20 flex flex-col items-end">
-          {!settings.taxInclusive && (
+          {(!settings.taxInclusive || (!!invoice.discountAmount && invoice.discountAmount > 0)) && (
             <div className="w-64 space-y-2 mb-4 text-sm text-right">
-              <div className="flex justify-between text-slate-500">
-                <span>Subtotal</span>
-                <span className="text-slate-900 font-medium">{formatPrice(invoice.subtotal)}</span>
-              </div>
-              <div className="flex justify-between text-slate-500">
-                <span>GST ({settings.taxRate}%)</span>
-                <span className="text-slate-900 font-medium">{formatPrice(invoice.taxAmount)}</span>
-              </div>
+              {!settings.taxInclusive && (
+                <>
+                  <div className="flex justify-between text-slate-500">
+                    <span>Subtotal</span>
+                    <span className="text-slate-900 font-medium">{formatPrice(invoice.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-500">
+                    <span>GST ({settings.taxRate}%)</span>
+                    <span className="text-slate-900 font-medium">{formatPrice(invoice.taxAmount)}</span>
+                  </div>
+                </>
+              )}
+              {!!invoice.discountAmount && invoice.discountAmount > 0 && (
+                <div className="flex justify-between text-slate-500">
+                  <span>Discount</span>
+                  <span className="text-slate-900 font-medium">-{formatPrice(invoice.discountAmount)}</span>
+                </div>
+              )}
             </div>
           )}
           <div className="w-full flex justify-between items-baseline border-t border-slate-200 pt-4">
@@ -326,6 +342,12 @@ export function InvoiceTemplate({ invoice, settings, id, className }: InvoiceTem
                 <span className="font-bold text-slate-800">{formatPrice(invoice.taxAmount)}</span>
               </div>
             </>
+          )}
+          {!!invoice.discountAmount && invoice.discountAmount > 0 && (
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-slate-500 font-bold uppercase tracking-tighter">Discount</span>
+              <span className="font-bold text-slate-800">-{formatPrice(invoice.discountAmount)}</span>
+            </div>
           )}
           <div className="flex justify-between items-center pt-3 border-t-2 border-slate-900">
             <span className="text-sm font-black text-slate-900 uppercase tracking-widest">

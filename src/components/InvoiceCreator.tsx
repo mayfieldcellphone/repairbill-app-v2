@@ -111,6 +111,8 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
       setCustomerPhone(invoiceToEdit.customerPhone);
       setCustomerCompany(invoiceToEdit.customerCompany || '');
       setCustomerNotes(invoiceToEdit.customerNotes || '');
+      setDiscountType(invoiceToEdit.discountType || 'fixed');
+      setDiscountValue(invoiceToEdit.discountAmount ? invoiceToEdit.discountValue?.toString() || '' : '');
       setPaymentMethod(invoiceToEdit.paymentMethod || 'Card');
       setInvoiceDate(invoiceToEdit.date);
       
@@ -466,6 +468,8 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerCompany, setCustomerCompany] = useState('');
   const [customerNotes, setCustomerNotes] = useState('');
+  const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('fixed');
+  const [discountValue, setDiscountValue] = useState('');
   const [isNewCustomer, setIsNewCustomer] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [allCustomers, setAllCustomers] = useState<Customer[]>(() => {
@@ -609,6 +613,9 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
       customerPhone: customerPhone,
       customerCompany: customerCompany,
       customerNotes: customerNotes,
+      discountType: discountAmount > 0 ? discountType : undefined,
+      discountValue: discountAmount > 0 ? (parseFloat(discountValue) || 0) : undefined,
+      discountAmount: discountAmount > 0 ? discountAmount : undefined,
       date: invoiceDate,
       dueDate: invoiceToEdit && invoiceToEdit.date === invoiceDate ? invoiceToEdit.dueDate : new Date(new Date(invoiceDate).getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       items: invoiceItems,
@@ -658,21 +665,32 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
     setCustomerPhone('');
     setCustomerCompany('');
     setCustomerNotes('');
+    setDiscountType('fixed');
+    setDiscountValue('');
     setIsNewCustomer(true);
   };
 
   const baseTotal = invoiceItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  
+
+  const discountAmount = (() => {
+    const val = parseFloat(discountValue) || 0;
+    if (val <= 0) return 0;
+    const raw = discountType === 'percent' ? (baseTotal * val / 100) : val;
+    return Math.min(Math.round(raw), Math.round(baseTotal));
+  })();
+
+  const discountedBaseTotal = Math.max(Math.round(baseTotal) - discountAmount, 0);
+
   let subtotal = 0;
   let taxAmount = 0;
   let total = 0;
 
   if (settings.taxInclusive) {
-    total = Math.round(baseTotal);
+    total = discountedBaseTotal;
     subtotal = Math.round(total / (1 + settings.taxRate / 100));
     taxAmount = total - subtotal;
   } else {
-    subtotal = Math.round(baseTotal);
+    subtotal = discountedBaseTotal;
     taxAmount = Math.round(subtotal * (settings.taxRate / 100));
     total = subtotal + taxAmount;
   }
@@ -1023,6 +1041,13 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
 
                 <div className="flex gap-3 pt-2">
                   <button 
+                    onClick={() => { if (editingItem) removeItem(editingItem.id); setEditingItem(null); }}
+                    title="Remove item"
+                    className="px-4 py-3 rounded-xl font-bold text-destructive bg-destructive/10 hover:bg-destructive/20 transition-all text-sm"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                  <button 
                     onClick={() => setEditingItem(null)}
                     className="flex-1 px-4 py-3 rounded-xl font-bold text-muted-foreground bg-muted hover:bg-muted/80 transition-all text-sm"
                   >
@@ -1339,14 +1364,6 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
                                <Sparkles size={10} className="text-primary" /> Back-date this {docType}
                             </p>
                           </div>
-                          <div className="relative">
-                            <textarea 
-                              placeholder="Customer Notes (Internal - e.g. Preferences, repair history tips...)"
-                              value={customerNotes}
-                              onChange={(e) => setCustomerNotes(e.target.value)}
-                              className="w-full p-4 bg-card border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary outline-none transition-all min-h-[80px] text-foreground placeholder:text-muted-foreground/50"
-                            />
-                          </div>
                         </div>
                       ) : (
                         <div className="p-4 bg-muted rounded-xl border border-border flex items-center gap-3">
@@ -1354,6 +1371,14 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
                           <span className="text-sm font-bold text-muted-foreground italic">Walk-in Customer (Standard)</span>
                         </div>
                       )}
+                      <div className="relative">
+                        <textarea 
+                          placeholder="Customer Notes (Internal - e.g. Preferences, repair history tips...)"
+                          value={customerNotes}
+                          onChange={(e) => setCustomerNotes(e.target.value)}
+                          className="w-full p-4 bg-card border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary outline-none transition-all min-h-[80px] text-foreground placeholder:text-muted-foreground/50"
+                        />
+                      </div>
                     </div>
 
                     <div className="space-y-3 pt-2 border-t border-border">
@@ -1361,27 +1386,84 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
                         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Summary of Services</p>
                         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Tax: {settings.taxRate}%</p>
                       </div>
-                      <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                      <div className="space-y-2 max-h-[240px] overflow-y-auto pr-2 custom-scrollbar">
                         {invoiceItems.map(item => (
-                          <div key={item.id} className="flex justify-between items-center py-2 border-b border-border/50">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-[10px] font-black text-muted-foreground border border-border">
+                          <div key={item.id} className="flex justify-between items-center gap-2 py-2 border-b border-border/50">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-8 h-8 shrink-0 rounded-lg bg-muted flex items-center justify-center text-[10px] font-black text-muted-foreground border border-border">
                                 {item.quantity}x
                               </div>
-                              <div>
-                                <p className="text-sm font-bold text-foreground">{item.serviceName}</p>
-                                <p className="text-[10px] text-muted-foreground">{item.brandName} {item.modelName}</p>
+                              <div className="min-w-0">
+                                <p className="text-sm font-bold text-foreground truncate">{item.serviceName}</p>
+                                <p className="text-[10px] text-muted-foreground truncate">{item.brandName} {item.modelName}</p>
                               </div>
                             </div>
-                            <div className="text-right">
-                              <span className="font-bold text-foreground">{formatPrice(item.price * item.quantity)}</span>
-                              {item.quantity > 1 && (
-                                <p className="text-[9px] text-muted-foreground">{formatPrice(item.price)} each</p>
-                              )}
+                            <div className="flex items-center gap-1 shrink-0">
+                              <div className="text-right mr-1">
+                                <span className="font-bold text-foreground">{formatPrice(item.price * item.quantity)}</span>
+                                {item.quantity > 1 && (
+                                  <p className="text-[9px] text-muted-foreground">{formatPrice(item.price)} each</p>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => handleStartEdit(item)}
+                                title="Edit item"
+                                className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                              >
+                                <Pencil size={13} />
+                              </button>
+                              <button
+                                onClick={() => removeItem(item.id)}
+                                title="Remove item"
+                                className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
+                              >
+                                <Trash2 size={13} />
+                              </button>
                             </div>
                           </div>
                         ))}
                       </div>
+                    </div>
+
+                    <div className="bg-muted/50 p-4 rounded-2xl border border-border space-y-2">
+                      <div className="flex justify-between items-center mb-2">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Discount</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="flex bg-card border border-border rounded-xl overflow-hidden shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setDiscountType('fixed')}
+                            className={cn(
+                              "px-3 py-3 text-sm font-bold transition-all",
+                              discountType === 'fixed' ? "bg-foreground text-background" : "text-muted-foreground"
+                            )}
+                          >
+                            $
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDiscountType('percent')}
+                            className={cn(
+                              "px-3 py-3 text-sm font-bold transition-all border-l border-border",
+                              discountType === 'percent' ? "bg-foreground text-background" : "text-muted-foreground"
+                            )}
+                          >
+                            %
+                          </button>
+                        </div>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={discountValue}
+                          onChange={(e) => setDiscountValue(e.target.value)}
+                          className="w-full px-4 py-3 bg-card border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary outline-none transition-all text-foreground"
+                        />
+                      </div>
+                      {discountAmount > 0 && (
+                        <p className="text-[10px] text-primary font-bold px-1">-{formatPrice(discountAmount)} off this {docType}</p>
+                      )}
                     </div>
 
                     <div className="bg-muted/50 p-4 rounded-2xl border border-border space-y-2">
@@ -1419,6 +1501,12 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
                     </div>
 
                     <div className="bg-muted/50 p-4 rounded-2xl border border-border space-y-2">
+                      {discountAmount > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground font-medium">Discount</span>
+                          <span className="font-bold text-destructive">-{formatPrice(discountAmount)}</span>
+                        </div>
+                      )}
                       {!settings.taxInclusive && (
                         <>
                           <div className="flex justify-between text-sm">
@@ -2212,14 +2300,14 @@ export function InvoiceCreator({ settings, onInvoiceCreated, invoiceToEdit, onCl
                     <div className="flex items-center gap-1 shrink-0">
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleStartEdit(item); }}
-                        className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                        className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
                         title="Edit Item"
                       >
                         <Pencil size={14} />
                       </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}
-                        className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                        className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
                         title="Delete Item"
                       >
                         <Trash2 size={14} />

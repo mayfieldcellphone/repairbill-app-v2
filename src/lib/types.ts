@@ -164,6 +164,9 @@ export interface Invoice {
   status: 'draft' | 'sent' | 'paid' | 'overdue' | 'void' | 'estimate';
   type: 'invoice' | 'estimate';
   paymentMethod?: 'Cash' | 'Card' | 'Bank Transfer' | 'Other';
+  discountType?: 'percent' | 'fixed';
+  discountValue?: number;
+  discountAmount?: number;
 }
 
 export interface LeadReply {
