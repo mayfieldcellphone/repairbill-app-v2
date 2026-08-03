@@ -44,6 +44,11 @@ function saveToJSON(invoices: any[]) {
   }
 }
 
+// NOTE: this generic dispatcher's JSON-file fallback (used when Postgres isn't reachable)
+// does NOT filter SELECT/DELETE by business_id - it has no way to parse arbitrary SQL safely.
+// Do NOT use `query()` for any multi-tenant table. Multi-tenant routes (invoices, leads) call
+// `pool` directly and implement their own business_id-scoped JSON fallback per route instead
+// (see invoices-api.ts / leads-api.ts).
 export const query = async (text: string, params?: any[]): Promise<any> => {
   const cleanText = text.trim().toUpperCase();
 
