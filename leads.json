@@ -1,0 +1,92 @@
+[
+  {
+    "id": "web_1785149624544_zoa7u",
+    "customerName": "Test Widget Lead",
+    "customerEmail": "test@example.com",
+    "customerPhone": "0400000000",
+    "message": "This is a test lead from widget verification.",
+    "type": "contact",
+    "status": "replied",
+    "replies": [
+      {
+        "id": "reply_1785149718531_5r6a2",
+        "message": "Thanks for reaching out! This is a test reply to confirm the widget pipeline is working end to end.",
+        "author": "Mayfield Phone Repair",
+        "createdAt": "2026-07-27T10:55:18.531Z"
+      }
+    ],
+    "createdAt": "2026-07-27T10:53:44.544Z",
+    "updatedAt": "2026-07-27T10:55:18.531Z",
+    "metadata": {
+      "source": "External Website",
+      "integratedVia": "RepairBill Web Widget"
+    }
+  },
+  {
+    "id": "web_1785152469458_oc6a8",
+    "customerName": "CORS Fix Test",
+    "customerEmail": "no-email@provided.com",
+    "customerPhone": "",
+    "message": "Testing after CORS fix deployment",
+    "type": "contact",
+    "status": "new",
+    "replies": [],
+    "createdAt": "2026-07-27T11:41:09.458Z",
+    "updatedAt": "2026-07-27T11:41:09.458Z",
+    "metadata": {
+      "source": "https://mayfieldphonerepair.com.au/",
+      "integratedVia": "RepairBill Web Widget"
+    }
+  },
+  {
+    "id": "web_1785152475806_eo8fn",
+    "customerName": "CORS Fix Test",
+    "customerEmail": "no-email@provided.com",
+    "customerPhone": "",
+    "message": "Testing after CORS fix deployment",
+    "type": "contact",
+    "status": "new",
+    "replies": [],
+    "createdAt": "2026-07-27T11:41:15.806Z",
+    "updatedAt": "2026-07-27T11:41:15.806Z",
+    "metadata": {
+      "source": "https://mayfieldphonerepair.com.au/",
+      "integratedVia": "RepairBill Web Widget"
+    }
+  },
+  {
+    "id": "web_1785152518437_wrviz",
+    "customerName": "Jane UI Widget Test",
+    "customerEmail": "janewidgettest@example.com",
+    "customerPhone": "",
+    "message": "Real widget UI test after CORS fix - screen crack quote please",
+    "type": "contact",
+    "status": "new",
+    "replies": [],
+    "createdAt": "2026-07-27T11:41:58.437Z",
+    "updatedAt": "2026-07-27T11:41:58.437Z",
+    "metadata": {
+      "source": "https://mayfieldphonerepair.com.au/?_cachebust=w6",
+      "integratedVia": "RepairBill Web Widget"
+    }
+  },
+  {
+    "customerName": "Email Wiring Test",
+    "customerEmail": "info@repairbill.shop",
+    "message": "Testing outbound email wiring",
+    "type": "contact",
+    "status": "replied",
+    "id": "lead_1785178183188_vniyf",
+    "createdAt": "2026-07-27T18:49:43.188Z",
+    "updatedAt": "2026-07-27T18:49:53.272Z",
+    "replies": [
+      {
+        "id": "reply_1785178193271_p9fcr",
+        "message": "Hi! This is a test reply to confirm outbound email is wired up correctly.",
+        "author": "Mayfield Phone Repair",
+        "createdAt": "2026-07-27T18:49:53.271Z"
+      }
+    ],
+    "metadata": {}
+  }
+]

@@ -14,19 +14,16 @@ if (isValidDbUrl) {
   console.log('[PostgreSQL] Valid DATABASE_URL not detected in environment, using local JSON storage mode.');
 }
 
-const pool = new Pool({ 
+const pool = new Pool({
   connectionString,
   connectionTimeoutMillis: isRemoteDb ? 10000 : 1000,
   ...(isRemoteDb ? { ssl: { rejectUnauthorized: false } } : {})
 });
 
-// Exported so other modules (e.g. leads-api.ts) can reuse the same connection pool
-// and implement their own table-specific JSON-file fallback logic.
 export { pool };
 
 const JSON_FILE_PATH = path.join(process.cwd(), 'invoices.json');
 
-// Helper to load invoices from JSON
 function loadFromJSON(): any[] {
   try {
     if (fs.existsSync(JSON_FILE_PATH)) {
@@ -39,7 +36,6 @@ function loadFromJSON(): any[] {
   return [];
 }
 
-// Helper to save invoices to JSON
 function saveToJSON(invoices: any[]) {
   try {
     fs.writeFileSync(JSON_FILE_PATH, JSON.stringify(invoices, null, 2), 'utf8');
@@ -48,16 +44,17 @@ function saveToJSON(invoices: any[]) {
   }
 }
 
-// Intercept queries and provide file fallback
+// NOTE: this generic dispatcher's JSON-file fallback (used when Postgres isn't reachable)
+// does NOT filter SELECT/DELETE by business_id - it has no way to parse arbitrary SQL safely.
+// Do NOT use `query()` for any multi-tenant table. Multi-tenant routes (invoices, leads) call
+// `pool` directly and implement their own business_id-scoped JSON fallback per route instead
+// (see invoices-api.ts / leads-api.ts).
 export const query = async (text: string, params?: any[]): Promise<any> => {
   const cleanText = text.trim().toUpperCase();
 
-  // Helper for JSON storage logic
   const handleJsonStorage = () => {
-    // Intercept SELECT
     if (cleanText.startsWith('SELECT')) {
       const invoices = loadFromJSON();
-      // Sort by created_at desc (newest first)
       const sorted = invoices.sort((a, b) => {
         const dateA = new Date(a.created_at || a.date || 0).getTime();
         const dateB = new Date(b.created_at || b.date || 0).getTime();
@@ -65,17 +62,15 @@ export const query = async (text: string, params?: any[]): Promise<any> => {
       });
       return { rows: sorted };
     }
-    
-    // Intercept INSERT / UPDATE (ON CONFLICT)
+
     if (cleanText.startsWith('INSERT')) {
       if (!params || params.length < 1) {
         throw new Error('INSERT parameters are missing in local DB fallback');
       }
-      
+
       const invoices = loadFromJSON();
       const id = params[0];
-      
-      // Parse items safely if it is a JSON string
+
       let items = params[5];
       if (typeof items === 'string') {
         try {
@@ -102,27 +97,25 @@ export const query = async (text: string, params?: any[]): Promise<any> => {
         payment_method: params[13] || 'Other',
         customer_company: params[14] || '',
         customer_notes: params[15] || '',
+        business_id: params[16] || null,
         created_at: new Date().toISOString()
       };
 
       const existingIndex = invoices.findIndex(inv => inv.id === id);
       if (existingIndex >= 0) {
-        // Update
         invoices[existingIndex] = {
           ...invoices[existingIndex],
           ...newRow,
-          created_at: invoices[existingIndex].created_at || newRow.created_at // retain original created_at
+          created_at: invoices[existingIndex].created_at || newRow.created_at
         };
       } else {
-        // Insert
         invoices.push(newRow);
       }
-      
+
       saveToJSON(invoices);
       return { rows: [newRow] };
     }
-    
-    // Intercept DELETE
+
     if (cleanText.startsWith('DELETE')) {
       if (!params || params.length < 1) {
         throw new Error('DELETE parameters are missing in local DB fallback');
@@ -133,8 +126,7 @@ export const query = async (text: string, params?: any[]): Promise<any> => {
       saveToJSON(filtered);
       return { rows: [{ id }] };
     }
-    
-    // Default fallback
+
     return { rows: [] };
   };
 
@@ -143,7 +135,6 @@ export const query = async (text: string, params?: any[]): Promise<any> => {
   }
 
   try {
-    // Try PostgreSQL if URL was configured
     return await pool.query(text, params);
   } catch (pgError: any) {
     return handleJsonStorage();
@@ -182,7 +173,8 @@ export async function ensureInvoicesTable() {
       "ALTER TABLE invoices ADD COLUMN IF NOT EXISTS type TEXT;",
       "ALTER TABLE invoices ADD COLUMN IF NOT EXISTS payment_method TEXT;",
       "ALTER TABLE invoices ADD COLUMN IF NOT EXISTS customer_company TEXT;",
-      "ALTER TABLE invoices ADD COLUMN IF NOT EXISTS customer_notes TEXT;"
+      "ALTER TABLE invoices ADD COLUMN IF NOT EXISTS customer_notes TEXT;",
+      "ALTER TABLE invoices ADD COLUMN IF NOT EXISTS business_id TEXT;"
     ];
     for (const alter of alters) {
       try {

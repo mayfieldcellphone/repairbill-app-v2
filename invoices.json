@@ -1,0 +1,2433 @@
+[
+  {
+    "id": "9flcerfkj",
+    "invoice_number": "INV-1005",
+    "customer_name": "Walk-in Customer",
+    "customer_email": "N/A",
+    "customer_phone": "N/A",
+    "items": [
+      {
+        "id": "ai-1785119822135-3-0",
+        "brandName": "Apple",
+        "modelName": "iPhone 17 Pro",
+        "serviceName": "Screen Protector",
+        "price": 30,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 27,
+    "tax_amount": 3,
+    "total": 30,
+    "status": "paid",
+    "date": "2026-07-27",
+    "due_date": "2026-08-10",
+    "type": "invoice",
+    "payment_method": "Cash",
+    "customer_company": "",
+    "customer_notes": "",
+    "created_at": "2026-07-27T02:37:08.460Z"
+  },
+  {
+    "id": "8x688trup",
+    "invoice_number": "INV-1004",
+    "customer_name": "Walk-in Customer",
+    "customer_email": "N/A",
+    "customer_phone": "N/A",
+    "items": [
+      {
+        "id": "ai-1785119822135-2-0",
+        "brandName": "Apple",
+        "modelName": "iPhone 15 Pro Max",
+        "serviceName": "Battery Replacement",
+        "price": 180,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 164,
+    "tax_amount": 16,
+    "total": 180,
+    "status": "paid",
+    "date": "2026-07-27",
+    "due_date": "2026-08-10",
+    "type": "invoice",
+    "payment_method": "Cash",
+    "customer_company": "",
+    "customer_notes": "",
+    "created_at": "2026-07-27T02:37:10.876Z"
+  },
+  {
+    "id": "l0jeu2e1c",
+    "invoice_number": "INV-1003",
+    "customer_name": "Walk-in Customer",
+    "customer_email": "N/A",
+    "customer_phone": "N/A",
+    "items": [
+      {
+        "id": "ai-1785119822135-1-0",
+        "brandName": "Other",
+        "modelName": "Device",
+        "serviceName": "Cable and Power Plug",
+        "price": 50,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 45,
+    "tax_amount": 5,
+    "total": 50,
+    "status": "paid",
+    "date": "2026-07-27",
+    "due_date": "2026-08-10",
+    "type": "invoice",
+    "payment_method": "Cash",
+    "customer_company": "",
+    "customer_notes": "",
+    "created_at": "2026-07-27T02:37:13.806Z"
+  },
+  {
+    "id": "uces2jz0h",
+    "invoice_number": "INV-1002",
+    "customer_name": "Walk-in Customer",
+    "customer_email": "N/A",
+    "customer_phone": "N/A",
+    "items": [
+      {
+        "id": "ai-1785119822132-0-0",
+        "brandName": "Apple",
+        "modelName": "iPhone 11",
+        "serviceName": "Software Repair",
+        "price": 70,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 64,
+    "tax_amount": 6,
+    "total": 70,
+    "status": "paid",
+    "date": "2026-07-27",
+    "due_date": "2026-08-10",
+    "type": "invoice",
+    "payment_method": "Cash",
+    "customer_company": "",
+    "customer_notes": "",
+    "created_at": "2026-07-27T02:37:17.038Z"
+  },
+  {
+    "id": "2hvzgi3ls",
+    "invoice_number": "INV-1006",
+    "customer_name": "Walk-in Customer",
+    "customer_email": "N/A",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "777f6vwua",
+        "serviceId": "screen-replacement--aftermarket-",
+        "brandName": "Apple",
+        "modelName": "iPhone 12 Pro Max",
+        "serviceName": "Screen Replacement (Aftermarket)",
+        "price": 160,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 145,
+    "tax_amount": 15,
+    "total": 160,
+    "status": "paid",
+    "date": "2026-07-27",
+    "due_date": "2026-08-10",
+    "type": "invoice",
+    "payment_method": "Card",
+    "customer_company": "",
+    "customer_notes": "",
+    "created_at": "2026-07-27T04:56:09.560Z"
+  },
+  {
+    "id": "f0f4ee28-d927-4a26-a801-66143a5746d7",
+    "invoice_number": "20260704-5",
+    "customer_name": "Mark",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "43d6eb37-24e6-4df1-a3fe-dc916d3b70cd",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Samsung A23 (Used Device Sale)",
+        "serviceName": "Repair Service",
+        "price": 210,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 191,
+    "tax_amount": 19,
+    "total": 210,
+    "status": "paid",
+    "date": "2026-07-04",
+    "due_date": "2026-07-04",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260704-5",
+    "created_at": "2026-07-27T06:13:22.623Z"
+  },
+  {
+    "id": "db209f30-e2d3-4632-a680-abce18bbc191",
+    "invoice_number": "20260704-4",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "b0beae19-3282-4da5-99e8-e83e7db828d5",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 11 Pro - LCD + Battery + Screen Protector",
+        "serviceName": "Repair Service",
+        "price": 230,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 209,
+    "tax_amount": 21,
+    "total": 230,
+    "status": "paid",
+    "date": "2026-07-04",
+    "due_date": "2026-07-04",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260704-4",
+    "created_at": "2026-07-27T06:13:23.065Z"
+  },
+  {
+    "id": "8bbb7719-7b49-4bff-8d73-d55c2e4acadc",
+    "invoice_number": "20260704-3",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "2ac2e7ec-83dd-496b-a1a1-dc4bfd44075a",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 11 - Battery Replacement",
+        "serviceName": "Repair Service",
+        "price": 120,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 109,
+    "tax_amount": 11,
+    "total": 120,
+    "status": "paid",
+    "date": "2026-07-04",
+    "due_date": "2026-07-04",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260704-3",
+    "created_at": "2026-07-27T06:13:23.500Z"
+  },
+  {
+    "id": "bf034523-2c2c-4c3e-93bc-6e458b3ffb34",
+    "invoice_number": "20260704-6",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "57e57681-ad98-47d5-b07f-c2dc2e62ee5e",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 8 - LCD + Battery Replacement",
+        "serviceName": "Repair Service",
+        "price": 180,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 164,
+    "tax_amount": 16,
+    "total": 180,
+    "status": "paid",
+    "date": "2026-07-04",
+    "due_date": "2026-07-04",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260704-6",
+    "created_at": "2026-07-27T06:13:23.936Z"
+  },
+  {
+    "id": "d9c7f0eb-756b-488f-978c-60db42c5adda",
+    "invoice_number": "20260705-1",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "dbb1a5e9-dabe-4e1d-802a-f48af83a3ecc",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone XS - Front and Back Glass Repair",
+        "serviceName": "Repair Service",
+        "price": 240,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 218,
+    "tax_amount": 22,
+    "total": 240,
+    "status": "paid",
+    "date": "2026-07-05",
+    "due_date": "2026-07-05",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260705-1",
+    "created_at": "2026-07-27T06:13:25.199Z"
+  },
+  {
+    "id": "f2c7d20d-7dd6-4cc6-96e2-c491ef6802f2",
+    "invoice_number": "20260706-1",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "8c2271b0-ae9f-4b36-bf98-9e5b989e30e0",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 11 - Case + Screen Protector",
+        "serviceName": "Repair Service",
+        "price": 50,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 45,
+    "tax_amount": 5,
+    "total": 50,
+    "status": "paid",
+    "date": "2026-07-06",
+    "due_date": "2026-07-06",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260706-1",
+    "created_at": "2026-07-27T06:13:25.633Z"
+  },
+  {
+    "id": "dc396c66-793b-4186-bd3b-e80ceb13370c",
+    "invoice_number": "20260714-2",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "8c265d3e-57c6-47fa-bef9-ebafafe4462c",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Device unspecified - Case",
+        "serviceName": "Repair Service",
+        "price": 20,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 18,
+    "tax_amount": 2,
+    "total": 20,
+    "status": "paid",
+    "date": "2026-07-14",
+    "due_date": "2026-07-14",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260714-2",
+    "created_at": "2026-07-27T06:13:26.077Z"
+  },
+  {
+    "id": "1df7081c-ad66-43ce-a2f3-4ff508b8f115",
+    "invoice_number": "20260714-3",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "0d81b603-bd9a-4fd0-99ca-060b69936e33",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Motorola Moto G35 - LCD Screen Repair",
+        "serviceName": "Repair Service",
+        "price": 150,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 136,
+    "tax_amount": 14,
+    "total": 150,
+    "status": "paid",
+    "date": "2026-07-14",
+    "due_date": "2026-07-14",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260714-3",
+    "created_at": "2026-07-27T06:13:27.825Z"
+  },
+  {
+    "id": "20581928-8714-49a5-96a0-3e77c1e2320e",
+    "invoice_number": "20260714-7",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "6db4f2e4-df84-4a96-b8d2-982f5903d743",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 13 Pro Max - LCD + Screen Protector",
+        "serviceName": "Repair Service",
+        "price": 270,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 245,
+    "tax_amount": 25,
+    "total": 270,
+    "status": "paid",
+    "date": "2026-07-14",
+    "due_date": "2026-07-14",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260714-7",
+    "created_at": "2026-07-27T06:13:36.754Z"
+  },
+  {
+    "id": "6f28642f-6d2e-4579-83b7-f2a9284f4716",
+    "invoice_number": "20260714-6",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "4bd250c3-ded2-41ee-a690-3995b6c03a24",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Samsung A55 - Software",
+        "serviceName": "Repair Service",
+        "price": 120,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 109,
+    "tax_amount": 11,
+    "total": 120,
+    "status": "paid",
+    "date": "2026-07-14",
+    "due_date": "2026-07-14",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260714-6",
+    "created_at": "2026-07-27T06:13:40.192Z"
+  },
+  {
+    "id": "d11b65e3-43ed-41cc-a333-a699dbd7125c",
+    "invoice_number": "20260714-4",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "e1fe671d-1a10-47da-9058-cc5216267466",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 14 Plus - Battery Replacement",
+        "serviceName": "Repair Service",
+        "price": 275,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 250,
+    "tax_amount": 25,
+    "total": 275,
+    "status": "paid",
+    "date": "2026-07-14",
+    "due_date": "2026-07-14",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260714-4",
+    "created_at": "2026-07-27T06:13:40.223Z"
+  },
+  {
+    "id": "a50b2ab3-cc64-4c7e-8e43-7d7064dbdf07",
+    "invoice_number": "20260706-3",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "22c6d3a3-3b44-479e-a2a2-a083af53ff59",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 13 Pro Max - Software",
+        "serviceName": "Repair Service",
+        "price": 50,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 45,
+    "tax_amount": 5,
+    "total": 50,
+    "status": "paid",
+    "date": "2026-07-06",
+    "due_date": "2026-07-06",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260706-3",
+    "created_at": "2026-07-27T06:13:40.603Z"
+  },
+  {
+    "id": "319c985a-622c-499b-b743-328c8fad60fd",
+    "invoice_number": "20260706-2",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "a9b732b5-272b-479f-ae68-fb36809a3417",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 8 - LCD + Speaker Repair",
+        "serviceName": "Repair Service",
+        "price": 150,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 136,
+    "tax_amount": 14,
+    "total": 150,
+    "status": "paid",
+    "date": "2026-07-06",
+    "due_date": "2026-07-06",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260706-2",
+    "created_at": "2026-07-27T06:13:40.633Z"
+  },
+  {
+    "id": "2c9b9150-9eea-4f84-9a34-563ea234f0cd",
+    "invoice_number": "20260706-4",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "bb215e91-7ddd-4542-a114-36045eb8a650",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 11 Pro Max - LCD Screen Repair",
+        "serviceName": "Repair Service",
+        "price": 150,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 136,
+    "tax_amount": 14,
+    "total": 150,
+    "status": "paid",
+    "date": "2026-07-06",
+    "due_date": "2026-07-06",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260706-4",
+    "created_at": "2026-07-27T06:13:41.036Z"
+  },
+  {
+    "id": "169c0a9f-8d61-4db8-96a2-78ac3fe0c524",
+    "invoice_number": "20260704-1",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "3c6f8a6d-a9cf-4374-add3-a8ee3e0bd479",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Samsung A04 - LCD Screen Repair (Cash)",
+        "serviceName": "Repair Service",
+        "price": 160,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 145,
+    "tax_amount": 15,
+    "total": 160,
+    "status": "paid",
+    "date": "2026-07-04",
+    "due_date": "2026-07-04",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260704-1",
+    "created_at": "2026-07-27T06:13:41.059Z"
+  },
+  {
+    "id": "908cc146-b61e-4c94-86ff-0e2e8eb79597",
+    "invoice_number": "20260707-3",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "b2191a30-9171-4832-b4f6-c41edf5469f1",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Device unspecified - Cable + Power Plug",
+        "serviceName": "Repair Service",
+        "price": 50,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 45,
+    "tax_amount": 5,
+    "total": 50,
+    "status": "paid",
+    "date": "2026-07-07",
+    "due_date": "2026-07-07",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260707-3",
+    "created_at": "2026-07-27T06:13:41.469Z"
+  },
+  {
+    "id": "943e91c6-33d8-40ee-a18a-9a8ffd362b1a",
+    "invoice_number": "20260707-5",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "33440a7e-3dee-4043-972d-1444f8571fa8",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 15 Pro - Battery Replacement",
+        "serviceName": "Repair Service",
+        "price": 150,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 136,
+    "tax_amount": 14,
+    "total": 150,
+    "status": "paid",
+    "date": "2026-07-07",
+    "due_date": "2026-07-07",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260707-5",
+    "created_at": "2026-07-27T06:13:41.899Z"
+  },
+  {
+    "id": "30070401-a18a-44cd-b0ee-03602c9cf152",
+    "invoice_number": "20260707-4",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "4294d1d0-0f8d-4677-9a8e-fc2e4877d9ce",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 16 (Used Device Sale)",
+        "serviceName": "Repair Service",
+        "price": 850,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 773,
+    "tax_amount": 77,
+    "total": 850,
+    "status": "paid",
+    "date": "2026-07-07",
+    "due_date": "2026-07-07",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260707-4",
+    "created_at": "2026-07-27T06:13:42.285Z"
+  },
+  {
+    "id": "4692725a-8c88-45ca-82ee-1a4e78abcff9",
+    "invoice_number": "20260707-6",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "48803485-3889-40b3-a9bf-94d48f15532e",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Device unclear - job unclear",
+        "serviceName": "Repair Service",
+        "price": 20,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 18,
+    "tax_amount": 2,
+    "total": 20,
+    "status": "paid",
+    "date": "2026-07-07",
+    "due_date": "2026-07-07",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260707-6",
+    "created_at": "2026-07-27T06:13:42.325Z"
+  },
+  {
+    "id": "adaab4f1-cd6c-45fa-bd77-e122f7ce80d9",
+    "invoice_number": "20260707-7",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "114d5780-454e-4459-a3d6-8a0a18b07f61",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 16 Pro - Screen Replacement",
+        "serviceName": "Repair Service",
+        "price": 450,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 409,
+    "tax_amount": 41,
+    "total": 450,
+    "status": "paid",
+    "date": "2026-07-07",
+    "due_date": "2026-07-07",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260707-7",
+    "created_at": "2026-07-27T06:13:42.715Z"
+  },
+  {
+    "id": "a7ad62d3-6c01-40eb-8f2e-b1f08d828986",
+    "invoice_number": "20260707-8",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "cfbd89a6-d1fb-4ee0-a5bb-7ef1c0bdbc64",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Oppo A38 - Screen Replacement",
+        "serviceName": "Repair Service",
+        "price": 150,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 136,
+    "tax_amount": 14,
+    "total": 150,
+    "status": "paid",
+    "date": "2026-07-07",
+    "due_date": "2026-07-07",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260707-8",
+    "created_at": "2026-07-27T06:13:42.755Z"
+  },
+  {
+    "id": "fa0b0d52-b6b7-4b70-b1cb-07e0b6344d27",
+    "invoice_number": "20260706-5",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "f2adbef5-a3f8-43cf-a410-8ca31fd36e0a",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 11 Pro - Battery Replacement",
+        "serviceName": "Repair Service",
+        "price": 150,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 136,
+    "tax_amount": 14,
+    "total": 150,
+    "status": "paid",
+    "date": "2026-07-06",
+    "due_date": "2026-07-06",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260706-5",
+    "created_at": "2026-07-27T06:13:43.141Z"
+  },
+  {
+    "id": "df6c0e63-3e11-4562-9f9f-8fb71a3cc4cd",
+    "invoice_number": "20260706-6",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "232bd156-7a33-4c30-8b03-0ae443fc038a",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 12 Pro Max - Camera Repair",
+        "serviceName": "Repair Service",
+        "price": 70,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 64,
+    "tax_amount": 6,
+    "total": 70,
+    "status": "paid",
+    "date": "2026-07-06",
+    "due_date": "2026-07-06",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260706-6",
+    "created_at": "2026-07-27T06:13:43.181Z"
+  },
+  {
+    "id": "ad0eba06-1577-466b-9b82-71492b8df30f",
+    "invoice_number": "20260706-7",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "a98ae1e8-c4cb-483c-a374-5ffaae69e08b",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 12 Pro Max (Used Device Sale)",
+        "serviceName": "Repair Service",
+        "price": 700,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 636,
+    "tax_amount": 64,
+    "total": 700,
+    "status": "paid",
+    "date": "2026-07-06",
+    "due_date": "2026-07-06",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260706-7",
+    "created_at": "2026-07-27T06:13:43.577Z"
+  },
+  {
+    "id": "4c9fd6b9-3483-4d3b-b73d-40e1568a5e60",
+    "invoice_number": "20260706-8",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "4d846803-0be6-4288-944f-29749abbecc5",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "MacBook - Screen Replacement",
+        "serviceName": "Repair Service",
+        "price": 450,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 409,
+    "tax_amount": 41,
+    "total": 450,
+    "status": "paid",
+    "date": "2026-07-06",
+    "due_date": "2026-07-06",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260706-8",
+    "created_at": "2026-07-27T06:13:43.616Z"
+  },
+  {
+    "id": "82c43835-75f8-4b12-bb27-cab81dc48c61",
+    "invoice_number": "20260706-9",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "bb104934-3dcf-4563-9de4-7cb40b5a5187",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Charger Cable",
+        "serviceName": "Repair Service",
+        "price": 30,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 27,
+    "tax_amount": 3,
+    "total": 30,
+    "status": "paid",
+    "date": "2026-07-06",
+    "due_date": "2026-07-06",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260706-9",
+    "created_at": "2026-07-27T06:13:43.994Z"
+  },
+  {
+    "id": "423d185b-3d7a-421e-8823-5383f8e7b0c4",
+    "invoice_number": "20260707-1",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "ec3b0ce2-061d-4cc2-ac43-889cc0841331",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 13 Pro - Screen + Screen Protector",
+        "serviceName": "Repair Service",
+        "price": 270,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 245,
+    "tax_amount": 25,
+    "total": 270,
+    "status": "paid",
+    "date": "2026-07-07",
+    "due_date": "2026-07-07",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260707-1",
+    "created_at": "2026-07-27T06:13:44.040Z"
+  },
+  {
+    "id": "3163a0df-d8f6-4fa8-af5b-e117cb251098",
+    "invoice_number": "20260707-2",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "a014b768-c26f-43b9-992c-e6b31d4d94d8",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Device unspecified - Screen Protector x2",
+        "serviceName": "Repair Service",
+        "price": 40,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 36,
+    "tax_amount": 4,
+    "total": 40,
+    "status": "paid",
+    "date": "2026-07-07",
+    "due_date": "2026-07-07",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260707-2",
+    "created_at": "2026-07-27T06:13:44.414Z"
+  },
+  {
+    "id": "05e118e6-b4d0-42d5-9bc2-b51de51064b7",
+    "invoice_number": "20260716-1",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "ea000297-86c8-4812-95ce-047bdcbd130e",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Oppo A38 - LCD Screen Repair",
+        "serviceName": "Repair Service",
+        "price": 150,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 136,
+    "tax_amount": 14,
+    "total": 150,
+    "status": "paid",
+    "date": "2026-07-16",
+    "due_date": "2026-07-16",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260716-1",
+    "created_at": "2026-07-27T06:13:44.529Z"
+  },
+  {
+    "id": "da50ac40-7c25-4c7a-976b-aa264f58ebf1",
+    "invoice_number": "20260717-1",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "314c42ee-2bc5-4255-af7c-11c480db4377",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 11 - LCD Screen Repair",
+        "serviceName": "Repair Service",
+        "price": 150,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 136,
+    "tax_amount": 14,
+    "total": 150,
+    "status": "paid",
+    "date": "2026-07-17",
+    "due_date": "2026-07-17",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260717-1",
+    "created_at": "2026-07-27T06:13:44.840Z"
+  },
+  {
+    "id": "8d7b9057-70ff-4938-a867-bcd9b1f672a9",
+    "invoice_number": "20260718-1",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "e65071d0-fcc1-492e-89d9-377dc4730d57",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Unbranded/Chinese model - LCD Screen Repair",
+        "serviceName": "Repair Service",
+        "price": 150,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 136,
+    "tax_amount": 14,
+    "total": 150,
+    "status": "paid",
+    "date": "2026-07-18",
+    "due_date": "2026-07-18",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260718-1",
+    "created_at": "2026-07-27T06:13:44.951Z"
+  },
+  {
+    "id": "4fb89ede-72f4-4aca-b406-204a367f53a5",
+    "invoice_number": "20260706-10",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "ab72fa9d-97b1-4ec3-bbe8-3de01f1cf65e",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Samsung S22 Ultra - Screen Replacement",
+        "serviceName": "Repair Service",
+        "price": 400,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 364,
+    "tax_amount": 36,
+    "total": 400,
+    "status": "paid",
+    "date": "2026-07-06",
+    "due_date": "2026-07-06",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260706-10",
+    "created_at": "2026-07-27T06:13:45.269Z"
+  },
+  {
+    "id": "3bb4f0a0-2af1-4755-ab47-1daf09979d07",
+    "invoice_number": "20260707-9",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "016142fd-7a85-48d3-af59-4f9550eb9c0e",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 16 Pro Max - Back Glass Repair",
+        "serviceName": "Repair Service",
+        "price": 180,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 164,
+    "tax_amount": 16,
+    "total": 180,
+    "status": "paid",
+    "date": "2026-07-07",
+    "due_date": "2026-07-07",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260707-9",
+    "created_at": "2026-07-27T06:13:45.697Z"
+  },
+  {
+    "id": "b7b1ba45-159e-47cb-80b9-d07fed7cae28",
+    "invoice_number": "20260704-2",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "7faf6448-0aad-4d1a-a12f-2baac3300c3e",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Samsung A13 - Software (Cash)",
+        "serviceName": "Repair Service",
+        "price": 50,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 45,
+    "tax_amount": 5,
+    "total": 50,
+    "status": "paid",
+    "date": "2026-07-04",
+    "due_date": "2026-07-04",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260704-2",
+    "created_at": "2026-07-27T06:13:45.915Z"
+  },
+  {
+    "id": "0f3a0033-f942-4a4d-bfa5-6bb94b354906",
+    "invoice_number": "20260708-1",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "ddc271eb-2394-4188-b128-049f4615fc07",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Device unknown - job unclear",
+        "serviceName": "Repair Service",
+        "price": 130,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 118,
+    "tax_amount": 12,
+    "total": 130,
+    "status": "paid",
+    "date": "2026-07-08",
+    "due_date": "2026-07-08",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260708-1",
+    "created_at": "2026-07-27T06:13:46.108Z"
+  },
+  {
+    "id": "65c8814b-92f1-422e-8c8c-bda573d4702b",
+    "invoice_number": "20260709-1",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "1f418557-984b-484c-b562-e9da62da8dc4",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Device unspecified - Case",
+        "serviceName": "Repair Service",
+        "price": 50,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 45,
+    "tax_amount": 5,
+    "total": 50,
+    "status": "paid",
+    "date": "2026-07-09",
+    "due_date": "2026-07-09",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260709-1",
+    "created_at": "2026-07-27T06:13:46.535Z"
+  },
+  {
+    "id": "2ca13b96-e216-4082-af4e-0b0b997ed45a",
+    "invoice_number": "20260708-2",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "b2479c47-f3d3-46e9-a3be-1bda07f7b565",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 12 - LCD + Battery Replacement",
+        "serviceName": "Repair Service",
+        "price": 200,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 182,
+    "tax_amount": 18,
+    "total": 200,
+    "status": "paid",
+    "date": "2026-07-08",
+    "due_date": "2026-07-08",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260708-2",
+    "created_at": "2026-07-27T06:13:46.853Z"
+  },
+  {
+    "id": "63789229-07c0-4a5e-8998-3e8eca36eb44",
+    "invoice_number": "20260709-10",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "d3bd56ad-e3bb-42b9-899f-4d36cfc45088",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 13 - LCD Screen Repair",
+        "serviceName": "Repair Service",
+        "price": 225,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 205,
+    "tax_amount": 20,
+    "total": 225,
+    "status": "paid",
+    "date": "2026-07-09",
+    "due_date": "2026-07-09",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260709-10",
+    "created_at": "2026-07-27T06:13:46.967Z"
+  },
+  {
+    "id": "3dc72e5b-5512-4e2c-9554-f4e619a5543f",
+    "invoice_number": "20260709-12",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "25f66d14-e730-4a4e-af10-737583eae966",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Samsung S21 Plus - LCD Screen Repair",
+        "serviceName": "Repair Service",
+        "price": 350,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 318,
+    "tax_amount": 32,
+    "total": 350,
+    "status": "paid",
+    "date": "2026-07-09",
+    "due_date": "2026-07-09",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260709-12",
+    "created_at": "2026-07-27T06:13:47.395Z"
+  },
+  {
+    "id": "a6b9c5b5-1872-4069-8c3b-919a95ad0a1b",
+    "invoice_number": "20260709-11",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "6dafd0a3-88d7-45a0-9c1e-95ab00ddb065",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPad Mini 6 (Used Device Sale)",
+        "serviceName": "Repair Service",
+        "price": 900,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 818,
+    "tax_amount": 82,
+    "total": 900,
+    "status": "paid",
+    "date": "2026-07-09",
+    "due_date": "2026-07-09",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260709-11",
+    "created_at": "2026-07-27T06:13:47.815Z"
+  },
+  {
+    "id": "c7dd8694-6c50-43c9-a546-f1bda157f7c7",
+    "invoice_number": "20260709-13",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "340fac02-594b-4fd8-baf9-3f1a3cc78d19",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Samsung A16 - LCD Screen Repair",
+        "serviceName": "Repair Service",
+        "price": 150,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 136,
+    "tax_amount": 14,
+    "total": 150,
+    "status": "paid",
+    "date": "2026-07-09",
+    "due_date": "2026-07-09",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260709-13",
+    "created_at": "2026-07-27T06:13:47.823Z"
+  },
+  {
+    "id": "9b6c7b14-ad44-4a41-8db9-d503782fba48",
+    "invoice_number": "20260709-3",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "2f4c94b5-4fc3-4def-9e3a-828c0673ab72",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 11 - Port Clean",
+        "serviceName": "Repair Service",
+        "price": 50,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 45,
+    "tax_amount": 5,
+    "total": 50,
+    "status": "paid",
+    "date": "2026-07-09",
+    "due_date": "2026-07-09",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260709-3",
+    "created_at": "2026-07-27T06:13:48.247Z"
+  },
+  {
+    "id": "bf0c06a8-14d2-41aa-a25e-a3d4bb7e6d33",
+    "invoice_number": "20260709-2",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "20b3a0b7-56ab-41a0-acb3-be2e4a240e04",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 11 Pro - Battery Replacement",
+        "serviceName": "Repair Service",
+        "price": 110,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 100,
+    "tax_amount": 10,
+    "total": 110,
+    "status": "paid",
+    "date": "2026-07-09",
+    "due_date": "2026-07-09",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260709-2",
+    "created_at": "2026-07-27T06:13:48.248Z"
+  },
+  {
+    "id": "5c5a1889-61e3-4e7e-b844-af42866ee7ba",
+    "invoice_number": "20260709-5",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "1708625f-cb96-46db-a5b8-c5e687dbbbc1",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 11 - LCD Screen Repair",
+        "serviceName": "Repair Service",
+        "price": 150,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 136,
+    "tax_amount": 14,
+    "total": 150,
+    "status": "paid",
+    "date": "2026-07-09",
+    "due_date": "2026-07-09",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260709-5",
+    "created_at": "2026-07-27T06:13:48.680Z"
+  },
+  {
+    "id": "9803be36-5e3c-46b7-815e-78592bbefcf3",
+    "invoice_number": "20260709-4",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "46f2cbdf-bd1f-4a2f-9ef6-366c99137b90",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Oppo - Charging Port Repair",
+        "serviceName": "Repair Service",
+        "price": 90,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 82,
+    "tax_amount": 8,
+    "total": 90,
+    "status": "paid",
+    "date": "2026-07-09",
+    "due_date": "2026-07-09",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260709-4",
+    "created_at": "2026-07-27T06:13:48.683Z"
+  },
+  {
+    "id": "df46806e-ef28-4df5-aaa8-1c21d41d08f5",
+    "invoice_number": "20260709-6",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "0bc8ef16-21e7-45a4-99e1-50bdfaeea700",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Laptop - Software",
+        "serviceName": "Repair Service",
+        "price": 30,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 27,
+    "tax_amount": 3,
+    "total": 30,
+    "status": "paid",
+    "date": "2026-07-09",
+    "due_date": "2026-07-09",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260709-6",
+    "created_at": "2026-07-27T06:13:49.108Z"
+  },
+  {
+    "id": "49c7fefd-f221-494b-8129-f30a9488f0bc",
+    "invoice_number": "20260709-7",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "2df14d98-4a56-459e-a3b0-55204440fc34",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Laptop - LCD + Screen Protector",
+        "serviceName": "Repair Service",
+        "price": 125,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 114,
+    "tax_amount": 11,
+    "total": 125,
+    "status": "paid",
+    "date": "2026-07-09",
+    "due_date": "2026-07-09",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260709-7",
+    "created_at": "2026-07-27T06:13:49.114Z"
+  },
+  {
+    "id": "fbdeabda-6fb6-4094-bf22-b882b287a62b",
+    "invoice_number": "20260709-8",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "d4d76d78-c5fa-4866-89a1-b741e304c00e",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 11 - LCD + Screen Protector + Case",
+        "serviceName": "Repair Service",
+        "price": 170,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 155,
+    "tax_amount": 15,
+    "total": 170,
+    "status": "paid",
+    "date": "2026-07-09",
+    "due_date": "2026-07-09",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260709-8",
+    "created_at": "2026-07-27T06:13:49.528Z"
+  },
+  {
+    "id": "d4031494-9fba-464a-acf2-172715340eb8",
+    "invoice_number": "20260709-9",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "f7cc30e3-d7a4-4a68-84cb-0fe980ec87f3",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 11 Pro - LCD + Case + Screen Protector",
+        "serviceName": "Repair Service",
+        "price": 190,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 173,
+    "tax_amount": 17,
+    "total": 190,
+    "status": "paid",
+    "date": "2026-07-09",
+    "due_date": "2026-07-09",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260709-9",
+    "created_at": "2026-07-27T06:13:49.537Z"
+  },
+  {
+    "id": "01acff95-c8e7-444f-b979-7d40a2c35c9f",
+    "invoice_number": "20260710-1",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "5edbb5c1-2728-4ff9-a54a-2afac517856d",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Samsung A54 - job unclear",
+        "serviceName": "Repair Service",
+        "price": 150,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 136,
+    "tax_amount": 14,
+    "total": 150,
+    "status": "paid",
+    "date": "2026-07-10",
+    "due_date": "2026-07-10",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260710-1",
+    "created_at": "2026-07-27T06:13:49.954Z"
+  },
+  {
+    "id": "e9036c57-eab2-48af-a006-9dca7bcd8947",
+    "invoice_number": "20260711-1",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "63ebde77-5128-48e6-9d1c-370bdb9a5a1f",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 17 Pro Max - LCD + Extras",
+        "serviceName": "Repair Service",
+        "price": 500,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 455,
+    "tax_amount": 45,
+    "total": 500,
+    "status": "paid",
+    "date": "2026-07-11",
+    "due_date": "2026-07-11",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260711-1",
+    "created_at": "2026-07-27T06:13:50.373Z"
+  },
+  {
+    "id": "ca2e7bab-b608-43b8-92e9-d0e2442434de",
+    "invoice_number": "20260710-2",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "d78fbf67-c6f2-4f42-8de4-a4c7003eb6af",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 13 - Software",
+        "serviceName": "Repair Service",
+        "price": 90,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 82,
+    "tax_amount": 8,
+    "total": 90,
+    "status": "paid",
+    "date": "2026-07-10",
+    "due_date": "2026-07-10",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260710-2",
+    "created_at": "2026-07-27T06:13:50.435Z"
+  },
+  {
+    "id": "b204728a-c753-42e8-9035-35c1b48c4b54",
+    "invoice_number": "20260711-2",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "561c6bac-c885-4fba-b558-f420ca4d8ccb",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 13 (Used Device Sale)",
+        "serviceName": "Repair Service",
+        "price": 600,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 545,
+    "tax_amount": 55,
+    "total": 600,
+    "status": "paid",
+    "date": "2026-07-11",
+    "due_date": "2026-07-11",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260711-2",
+    "created_at": "2026-07-27T06:13:50.793Z"
+  },
+  {
+    "id": "ea6858a2-4eb7-4dbf-b9a8-d91c460dc23d",
+    "invoice_number": "20260711-3",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "1d08f15a-94af-48a2-8a42-86ca59518f12",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Samsung A31 - LCD Screen Repair",
+        "serviceName": "Repair Service",
+        "price": 150,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 136,
+    "tax_amount": 14,
+    "total": 150,
+    "status": "paid",
+    "date": "2026-07-11",
+    "due_date": "2026-07-11",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260711-3",
+    "created_at": "2026-07-27T06:13:50.868Z"
+  },
+  {
+    "id": "f7617f77-b24a-4dd2-9baf-68415614516e",
+    "invoice_number": "20260711-4",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "0f152a4b-49f9-4fbb-83cf-bc4b93881ea2",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Device unspecified - Screen Protector",
+        "serviceName": "Repair Service",
+        "price": 30,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 27,
+    "tax_amount": 3,
+    "total": 30,
+    "status": "paid",
+    "date": "2026-07-11",
+    "due_date": "2026-07-11",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260711-4",
+    "created_at": "2026-07-27T06:13:51.217Z"
+  },
+  {
+    "id": "b083b0c4-7f21-413e-a4b5-d71a7085f2ec",
+    "invoice_number": "20260711-5",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "54a8ae7e-0c96-48ee-82a2-d23cee6b74cb",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 11 Pro (Used Device Sale)",
+        "serviceName": "Repair Service",
+        "price": 300,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 273,
+    "tax_amount": 27,
+    "total": 300,
+    "status": "paid",
+    "date": "2026-07-11",
+    "due_date": "2026-07-11",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260711-5",
+    "created_at": "2026-07-27T06:13:51.295Z"
+  },
+  {
+    "id": "cdb3441f-af6c-4268-8320-be4e4d3e6793",
+    "invoice_number": "20260711-6",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "c5bd7141-5a2a-4828-8288-3b41963c1f90",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 12 - LCD + Case + Screen Protector",
+        "serviceName": "Repair Service",
+        "price": 220,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 200,
+    "tax_amount": 20,
+    "total": 220,
+    "status": "paid",
+    "date": "2026-07-11",
+    "due_date": "2026-07-11",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260711-6",
+    "created_at": "2026-07-27T06:13:51.642Z"
+  },
+  {
+    "id": "e489f23c-a0dc-4e29-80bf-dd721e265bb3",
+    "invoice_number": "20260711-7",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "46ea3b8d-93c1-465b-a034-01f4bf1612b4",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 11 - Case",
+        "serviceName": "Repair Service",
+        "price": 20,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 18,
+    "tax_amount": 2,
+    "total": 20,
+    "status": "paid",
+    "date": "2026-07-11",
+    "due_date": "2026-07-11",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260711-7",
+    "created_at": "2026-07-27T06:13:51.736Z"
+  },
+  {
+    "id": "21980bb0-afbd-458c-a3a5-0f922c097768",
+    "invoice_number": "20260711-8",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "7b1ae123-7483-4ede-9992-ee84d8c77e7c",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 11 Pro Max (Used Device Sale) + Case",
+        "serviceName": "Repair Service",
+        "price": 495,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 450,
+    "tax_amount": 45,
+    "total": 495,
+    "status": "paid",
+    "date": "2026-07-11",
+    "due_date": "2026-07-11",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260711-8",
+    "created_at": "2026-07-27T06:13:52.067Z"
+  },
+  {
+    "id": "a08ba818-2eb4-4c11-aa25-e8c38b17d1be",
+    "invoice_number": "20260712-1",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "3725b126-7abc-40e5-8457-8eca1f4be6fe",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Samsung S24 Ultra (Used Device Sale)",
+        "serviceName": "Repair Service",
+        "price": 550,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 500,
+    "tax_amount": 50,
+    "total": 550,
+    "status": "paid",
+    "date": "2026-07-12",
+    "due_date": "2026-07-12",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260712-1",
+    "created_at": "2026-07-27T06:13:52.493Z"
+  },
+  {
+    "id": "bb5a871e-7f4d-435a-9642-56d1fba79fc4",
+    "invoice_number": "20260711-9",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "7db967f6-7410-4881-b09b-a9a128ab1ebe",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 13 (Used Device Sale) + Case",
+        "serviceName": "Repair Service",
+        "price": 600,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 545,
+    "tax_amount": 55,
+    "total": 600,
+    "status": "paid",
+    "date": "2026-07-11",
+    "due_date": "2026-07-11",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260711-9",
+    "created_at": "2026-07-27T06:13:52.614Z"
+  },
+  {
+    "id": "1ca61b01-b524-4607-b2ef-7277066a460c",
+    "invoice_number": "20260712-2",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "5956a97c-cd0d-464b-b337-5e3bbabc48df",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Telstra Phone (Used Device Sale)",
+        "serviceName": "Repair Service",
+        "price": 60,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 55,
+    "tax_amount": 5,
+    "total": 60,
+    "status": "paid",
+    "date": "2026-07-12",
+    "due_date": "2026-07-12",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260712-2",
+    "created_at": "2026-07-27T06:13:52.924Z"
+  },
+  {
+    "id": "c8f43494-4ce2-4586-89d7-c3c163312ca2",
+    "invoice_number": "20260712-3",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "b70230ca-d535-466c-b8de-90aa53e16f06",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Samsung S6 Lite - LCD Screen Repair",
+        "serviceName": "Repair Service",
+        "price": 150,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 136,
+    "tax_amount": 14,
+    "total": 150,
+    "status": "paid",
+    "date": "2026-07-12",
+    "due_date": "2026-07-12",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260712-3",
+    "created_at": "2026-07-27T06:13:53.041Z"
+  },
+  {
+    "id": "81b860b7-faa6-4a34-b920-83ebc1308cc6",
+    "invoice_number": "20260712-4",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "da6b6045-757d-4d88-9018-84e2a0b7b66e",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 15 - LCD Screen Repair",
+        "serviceName": "Repair Service",
+        "price": 250,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 227,
+    "tax_amount": 23,
+    "total": 250,
+    "status": "paid",
+    "date": "2026-07-12",
+    "due_date": "2026-07-12",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260712-4",
+    "created_at": "2026-07-27T06:13:53.347Z"
+  },
+  {
+    "id": "741fd07d-3a31-49cb-98aa-f5fc30dd2122",
+    "invoice_number": "20260713-1",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "d4f7ed57-15b1-40c5-835d-2c0369b65a05",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Charging Cable",
+        "serviceName": "Repair Service",
+        "price": 20,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 18,
+    "tax_amount": 2,
+    "total": 20,
+    "status": "paid",
+    "date": "2026-07-13",
+    "due_date": "2026-07-13",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260713-1",
+    "created_at": "2026-07-27T06:13:53.476Z"
+  },
+  {
+    "id": "43897ba7-2a1c-4714-b215-a2a6c16d8f24",
+    "invoice_number": "20260713-2",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "9f62996b-8880-4333-b61e-ef338c8eeffd",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Device unspecified x2 - Screen Protector",
+        "serviceName": "Repair Service",
+        "price": 40,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 36,
+    "tax_amount": 4,
+    "total": 40,
+    "status": "paid",
+    "date": "2026-07-13",
+    "due_date": "2026-07-13",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260713-2",
+    "created_at": "2026-07-27T06:13:53.785Z"
+  },
+  {
+    "id": "61622e6c-1245-4130-a5d5-0e93a0e5adb6",
+    "invoice_number": "20260713-3",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "c8709757-2881-4996-bedb-b6254738fa47",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Samsung Note 20 - Charging Port Repair",
+        "serviceName": "Repair Service",
+        "price": 120,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 109,
+    "tax_amount": 11,
+    "total": 120,
+    "status": "paid",
+    "date": "2026-07-13",
+    "due_date": "2026-07-13",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260713-3",
+    "created_at": "2026-07-27T06:13:53.906Z"
+  },
+  {
+    "id": "528cb451-29c9-4dd3-9f13-14a60ecb9d7f",
+    "invoice_number": "20260713-4",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "ec0854bf-00a1-4bf5-bdbe-587f19e774fe",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 13 - Battery Replacement",
+        "serviceName": "Repair Service",
+        "price": 120,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 109,
+    "tax_amount": 11,
+    "total": 120,
+    "status": "paid",
+    "date": "2026-07-13",
+    "due_date": "2026-07-13",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260713-4",
+    "created_at": "2026-07-27T06:13:54.209Z"
+  },
+  {
+    "id": "45dadbe1-6dc5-4599-9708-ec44acbdb98c",
+    "invoice_number": "20260713-5",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "9c4d28c2-f74b-4918-8068-7ac158fd7040",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone 11 - Charging Port Repair",
+        "serviceName": "Repair Service",
+        "price": 120,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 109,
+    "tax_amount": 11,
+    "total": 120,
+    "status": "paid",
+    "date": "2026-07-13",
+    "due_date": "2026-07-13",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260713-5",
+    "created_at": "2026-07-27T06:13:54.775Z"
+  },
+  {
+    "id": "ba7ec2af-428c-4540-a0b8-f01a5c225ce8",
+    "invoice_number": "20260706-11",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "9311c626-f83c-475c-99a5-380d04690ab0",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Samsung A22 - Software",
+        "serviceName": "Repair Service",
+        "price": 90,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 82,
+    "tax_amount": 8,
+    "total": 90,
+    "status": "paid",
+    "date": "2026-07-06",
+    "due_date": "2026-07-06",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260706-11",
+    "created_at": "2026-07-27T06:13:54.982Z"
+  },
+  {
+    "id": "5839f63d-949e-47ff-b9e9-21412391a819",
+    "invoice_number": "20260713-6",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "176dd399-54e8-4028-a19c-577490fbd6a3",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Laptop - Software",
+        "serviceName": "Repair Service",
+        "price": 120,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 109,
+    "tax_amount": 11,
+    "total": 120,
+    "status": "paid",
+    "date": "2026-07-13",
+    "due_date": "2026-07-13",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260713-6",
+    "created_at": "2026-07-27T06:13:55.072Z"
+  },
+  {
+    "id": "b8b2768a-8490-4c5e-b06d-8c7851446323",
+    "invoice_number": "20260713-7",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "ebaca77e-87cd-4e03-ad60-e5432370dce3",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Vivo (model unspecified)",
+        "serviceName": "Repair Service",
+        "price": 90,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 82,
+    "tax_amount": 8,
+    "total": 90,
+    "status": "paid",
+    "date": "2026-07-13",
+    "due_date": "2026-07-13",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260713-7",
+    "created_at": "2026-07-27T06:13:55.206Z"
+  },
+  {
+    "id": "886bd6de-6b13-4ba1-ba58-06eb9f70e5d0",
+    "invoice_number": "20260714-1",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "9f8a76bd-c9b4-4324-a6ed-a88f4c6c4f13",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Used Phone - Case",
+        "serviceName": "Repair Service",
+        "price": 245,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 223,
+    "tax_amount": 22,
+    "total": 245,
+    "status": "paid",
+    "date": "2026-07-14",
+    "due_date": "2026-07-14",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260714-1",
+    "created_at": "2026-07-27T06:13:55.502Z"
+  },
+  {
+    "id": "16d174b3-b3ad-44d3-8b2e-61775e5f8895",
+    "invoice_number": "20260714-8",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "b847cb53-9757-48f3-aace-29b28559bc15",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPhone XS - LCD Screen Repair",
+        "serviceName": "Repair Service",
+        "price": 150,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 136,
+    "tax_amount": 14,
+    "total": 150,
+    "status": "paid",
+    "date": "2026-07-14",
+    "due_date": "2026-07-14",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260714-8",
+    "created_at": "2026-07-27T06:14:01.214Z"
+  },
+  {
+    "id": "7c08180d-5da9-4985-9825-9b0fdaf77d35",
+    "invoice_number": "20260714-5",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "ce14dbf6-5d20-4471-bd0a-be01d8f70734",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "iPad 10th Gen - LCD Screen Repair",
+        "serviceName": "Repair Service",
+        "price": 180,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 164,
+    "tax_amount": 16,
+    "total": 180,
+    "status": "paid",
+    "date": "2026-07-14",
+    "due_date": "2026-07-14",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260714-5",
+    "created_at": "2026-07-27T06:14:07.323Z"
+  },
+  {
+    "id": "6f3cbcef-e889-4616-8261-09a54e5c9ecd",
+    "invoice_number": "20260713-8",
+    "customer_name": "Walk-in",
+    "customer_email": "",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "2b240e5b-967e-4da0-9ca9-c6d60e53d5e3",
+        "serviceId": "imported",
+        "brandName": "Other",
+        "modelName": "Samsung A22 5G",
+        "serviceName": "Repair Service",
+        "price": 70,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 64,
+    "tax_amount": 6,
+    "total": 70,
+    "status": "paid",
+    "date": "2026-07-13",
+    "due_date": "2026-07-13",
+    "type": "invoice",
+    "payment_method": "Other",
+    "customer_company": "",
+    "customer_notes": "Legacy Order: 20260713-8",
+    "created_at": "2026-07-27T06:14:55.418Z"
+  },
+  {
+    "id": "30uwj47cd",
+    "invoice_number": "INV-1007",
+    "customer_name": "Walk-in Customer",
+    "customer_email": "N/A",
+    "customer_phone": "N/A",
+    "items": [
+      {
+        "id": "ai-1785133817726-0-0",
+        "brandName": "Samsung",
+        "modelName": "A54",
+        "serviceName": "Case",
+        "price": 20,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 18,
+    "tax_amount": 2,
+    "total": 20,
+    "status": "paid",
+    "date": "2026-07-27",
+    "due_date": "2026-08-10",
+    "type": "invoice",
+    "payment_method": "Card",
+    "customer_company": "",
+    "customer_notes": "",
+    "created_at": "2026-07-27T06:30:22.951Z"
+  },
+  {
+    "id": "y8njdetti",
+    "invoice_number": "INV-1008",
+    "customer_name": "Walk-in Customer",
+    "customer_email": "N/A",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "xm0o2i372",
+        "serviceId": "screen-replacement--oem-",
+        "brandName": "Samsung",
+        "modelName": "Galaxy S25 Ultra",
+        "serviceName": "Screen Replacement (OEM)",
+        "price": 485,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 441,
+    "tax_amount": 44,
+    "total": 485,
+    "status": "paid",
+    "date": "2026-07-27",
+    "due_date": "2026-08-10",
+    "type": "invoice",
+    "payment_method": "Card",
+    "customer_company": "",
+    "customer_notes": "",
+    "created_at": "2026-07-27T06:52:37.546Z"
+  },
+  {
+    "id": "h7xif2fiv",
+    "invoice_number": "INV-1009",
+    "customer_name": "Walk-in Customer",
+    "customer_email": "N/A",
+    "customer_phone": "",
+    "items": [
+      {
+        "id": "sx4egdkk1",
+        "serviceId": "battery-replacement",
+        "brandName": "Apple",
+        "modelName": "iPhone 13",
+        "serviceName": "Battery Replacement",
+        "price": 130,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 118,
+    "tax_amount": 12,
+    "total": 130,
+    "status": "paid",
+    "date": "2026-07-27",
+    "due_date": "2026-08-10",
+    "type": "invoice",
+    "payment_method": "Card",
+    "customer_company": "",
+    "customer_notes": "",
+    "created_at": "2026-07-27T06:53:18.090Z"
+  }
+]

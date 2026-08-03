@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RepairBill Admin</title>
+<meta name="robots" content="noindex">
+<style>
+  body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#f4f6f8;margin:0;padding:32px;color:#1a1a2e}
+  .wrap{max-width:1000px;margin:0 auto}
+  h1{font-size:22px;margin-bottom:4px}
+  .sub{color:#666;margin-bottom:24px;font-size:13px}
+  .card{background:#fff;border-radius:10px;padding:20px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  input,button{font-size:14px;padding:8px 10px;border-radius:6px;border:1px solid #d0d5dd;box-sizing:border-box}
+  input{width:100%}
+  button{background:#2563eb;color:#fff;border:none;cursor:pointer;font-weight:600}
+  button.secondary{background:#eef1f5;color:#1a1a2e}
+  button.danger{background:#dc2626}
+  button:hover{opacity:.9}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #eee}
+  th{color:#666;font-weight:600;font-size:12px;text-transform:uppercase}
+  .row-actions{display:flex;gap:6px}
+  .row-actions button{padding:5px 8px;font-size:12px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+  label{display:block;font-size:12px;color:#666;margin-bottom:4px}
+  #keyGate{max-width:420px;margin:80px auto}
+  #err{color:#dc2626;font-size:13px;margin-top:8px}
+  #ok{color:#16a34a;font-size:13px;margin-top:8px}
+  code{background:#f1f3f5;padding:2px 5px;border-radius:4px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="keyGate" class="card">
+    <h1>RepairBill Admin</h1>
+    <p class="sub">Enter the admin key to manage businesses.</p>
+    <button onclick="saveKey()">Enter Admin Key</button>
+    <div id="gateErr" style="color:#dc2626;font-size:13px;margin-top:8px"></div>
+  </div>
+
+  <div id="app" style="display:none">
+    <h1>RepairBill Admin</h1>
+    <p class="sub">Provision and manage tenant businesses. <a href="#" onclick="clearKey();return false;">Change key</a></p>
+
+    <div class="card">
+      <h3 style="margin-top:0">New Business</h3>
+      <div class="grid">
+        <div><label>Business Name</label><input id="newName" placeholder="Joe's Phone Repair"></div>
+        <div><label>Login Email</label><input id="newEmail" placeholder="owner@example.com"></div>
+        <div><label>Password</label><input id="newPassword" type="password" placeholder="Temporary password"></div>
+        <div><label>Sender Name (optional)</label><input id="newSender" placeholder="Defaults to business name"></div>
+      </div>
+      <button onclick="createBusiness()">Create Business</button>
+      <div id="createErr" style="color:#dc2626;font-size:13px;margin-top:8px"></div>
+      <div id="createOk" style="color:#16a34a;font-size:13px;margin-top:8px"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">Businesses</h3>
+      <table>
+        <thead><tr><th>Name</th><th>Login Email</th><th>Widget Key</th><th>Actions</th></tr></thead>
+        <tbody id="bizRows"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function getKey(){ return localStorage.getItem('rb_admin_key') || ''; }
+function saveKey(){
+  const k = (window.prompt('Paste the ADMIN_API_KEY:') || '').trim();
+  if(!k){ document.getElementById('gateErr').textContent = 'Enter a key.'; return; }
+  localStorage.setItem('rb_admin_key', k);
+  boot();
+}
+function clearKey(){ localStorage.removeItem('rb_admin_key'); boot(); }
+
+async function api(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({'x-admin-key': getKey(), 'Content-Type':'application/json'}, opts.headers||{});
+  const res = await fetch(path, opts);
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+async function loadBusinesses(){
+  const rows = document.getElementById('bizRows');
+  rows.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+  try{
+    const data = await api('/api/admin/businesses');
+    if(!data.length){ rows.innerHTML = '<tr><td colspan="4">No businesses yet.</td></tr>'; return; }
+    rows.innerHTML = data.map(b => `
+      <tr>
+        <td>${escapeHtml(b.name)}</td>
+        <td>${escapeHtml(b.loginEmail)}</td>
+        <td><code>${escapeHtml(b.widgetApiKey)}</code></td>
+        <td class="row-actions">
+          <button class="secondary" onclick="resetPassword('${b.id}','${escapeHtml(b.name)}')">Reset Password</button>
+          <button class="danger" onclick="deleteBusiness('${b.id}','${escapeHtml(b.name)}')">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  }catch(e){
+    rows.innerHTML = '<tr><td colspan="4" style="color:#dc2626">'+escapeHtml(e.message)+'</td></tr>';
+    if(String(e.message).toLowerCase().includes('admin key')){ clearKey(); }
+  }
+}
+
+async function createBusiness(){
+  const name = document.getElementById('newName').value.trim();
+  const loginEmail = document.getElementById('newEmail').value.trim();
+  const password = document.getElementById('newPassword').value;
+  const senderName = document.getElementById('newSender').value.trim();
+  const errEl = document.getElementById('createErr');
+  const okEl = document.getElementById('createOk');
+  errEl.textContent = ''; okEl.textContent = '';
+  if(!name || !loginEmail || !password){ errEl.textContent = 'Name, email, and password are required.'; return; }
+  try{
+    await api('/api/admin/businesses', { method:'POST', body: JSON.stringify({ name, loginEmail, password, senderName: senderName||undefined }) });
+    okEl.textContent = 'Business created.';
+    document.getElementById('newName').value='';
+    document.getElementById('newEmail').value='';
+    document.getElementById('newPassword').value='';
+    document.getElementById('newSender').value='';
+    loadBusinesses();
+  }catch(e){ errEl.textContent = e.message; }
+}
+
+async function deleteBusiness(id, name){
+  if(!confirm('Delete "'+name+'"? This cannot be undone.')) return;
+  try{ await api('/api/admin/businesses/'+id, { method:'DELETE' }); loadBusinesses(); }
+  catch(e){ alert(e.message); }
+}
+
+async function resetPassword(id, name){
+  const pw = prompt('New password for "'+name+'":');
+  if(!pw) return;
+  try{ await api('/api/admin/businesses/'+id+'/reset-password', { method:'POST', body: JSON.stringify({ password: pw }) }); alert('Password updated.'); }
+  catch(e){ alert(e.message); }
+}
+
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function boot(){
+  const k = getKey();
+  if(!k){
+    document.getElementById('keyGate').style.display='block';
+    document.getElementById('app').style.display='none';
+    return;
+  }
+  document.getElementById('keyGate').style.display='none';
+  document.getElementById('app').style.display='block';
+  loadBusinesses();
+}
+boot();
+</script>
+</body>
+</html>
