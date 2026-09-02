@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import admin from 'firebase-admin';
 import { pool } from './db';
 
 const router = express.Router();
@@ -9,9 +10,12 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-insecure-secret-change-me';
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY || '';
 
-// ---------------------------------------------------------------------------
-// Types (loosely) + row mapper
-// ---------------------------------------------------------------------------
+// Single, fixed, publicly-shared demo business. "Instant Sandbox" always resolves
+// here -- never to a real shop's account -- so trying out the product can never touch
+// (or accidentally grant access to) anyone's real invoices or customer data.
+const SANDBOX_BUSINESS_ID = 'demo-sandbox-public';
+const SANDBOX_LOGIN_EMAIL = 'sandbox@repairbill.internal';
+
 function fromBusinessRow(row: any) {
   return {
     id: row.id,
@@ -35,11 +39,14 @@ function generateId() {
   return 'biz_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex');
 }
 
-// ---------------------------------------------------------------------------
-// Middleware
-// ---------------------------------------------------------------------------
+/** Turns a verified email into the same deterministic business id scheme the app has
+ *  always used (demo-user-<slug>) -- kept for backward compatibility with existing rows.
+ *  Only ever called with an EMAIL THAT FIREBASE HAS JUST VERIFIED, never a raw client value. */
+function businessIdForVerifiedEmail(email: string) {
+  const clean = email.toLowerCase().trim().replace(/[^a-z0-9]/g, '-');
+  return `demo-user-${clean}`;
+}
 
-/** Verifies the dashboard JWT (Authorization: Bearer <jwt>) and attaches req.businessId */
 export function requireAuth(req: any, res: any, next: any) {
   const header = req.headers['authorization']?.toString() || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
@@ -53,7 +60,6 @@ export function requireAuth(req: any, res: any, next: any) {
   }
 }
 
-/** Gates the admin-provisioning routes with a single shared secret (x-admin-key header) */
 export function requireAdmin(req: any, res: any, next: any) {
   if (!ADMIN_API_KEY) {
     return res.status(500).json({ error: 'Server not configured', message: 'ADMIN_API_KEY is not set on the server.' });
@@ -63,9 +69,6 @@ export function requireAdmin(req: any, res: any, next: any) {
   next();
 }
 
-// ---------------------------------------------------------------------------
-// Schema
-// ---------------------------------------------------------------------------
 export async function ensureBusinessesTable() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS businesses (
@@ -84,10 +87,65 @@ export async function ensureBusinessesTable() {
   `);
 }
 
+async function ensureSandboxBusiness() {
+  const existing = await pool.query('SELECT * FROM businesses WHERE id = $1', [SANDBOX_BUSINESS_ID]);
+  if (existing.rows.length > 0) return existing.rows[0];
+  const placeholderHash = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10);
+  const result = await pool.query(
+    `INSERT INTO businesses (id, name, login_email, password_hash, widget_api_key, sender_name)
+     VALUES ($1,$2,$3,$4,$5,$6)
+     ON CONFLICT (id) DO NOTHING
+     RETURNING *;`,
+    [SANDBOX_BUSINESS_ID, 'RepairBill Demo Shop', SANDBOX_LOGIN_EMAIL, placeholderHash, generateApiKey(), 'RepairBill Demo Shop']
+  );
+  if (result.rows.length > 0) return result.rows[0];
+  const reread = await pool.query('SELECT * FROM businesses WHERE id = $1', [SANDBOX_BUSINESS_ID]);
+  return reread.rows[0];
+}
+
+// POST /api/auth/bootstrap
+//
+// Issues the dashboard session JWT. Two, and only two, ways to get one:
+//  1. { sandbox: true } -- no auth required. Always resolves to the single shared
+//     SANDBOX_BUSINESS_ID, ignoring any other value the client sends.
+//  2. A verified Firebase ID token in Authorization: Bearer <token> -- the business
+//     id is derived server-side from the TOKEN'S verified email, never from anything
+//     the client puts in the request body.
+//
+// Previously this endpoint trusted a client-supplied uid directly and would hand
+// back a live session for ANY existing business just by naming its id -- no password,
+// no ownership check. Do not reintroduce a path that derives req.businessId from
+// client-supplied data.
 router.post('/api/auth/bootstrap', async (req, res) => {
-  const { uid, name, apiKey } = req.body;
-  if (!uid) return res.status(400).json({ error: 'uid is required' });
+  const { sandbox, name, apiKey } = req.body || {};
+
   try {
+    if (sandbox === true) {
+      const row = await ensureSandboxBusiness();
+      const token = jwt.sign({ businessId: row.id }, JWT_SECRET, { expiresIn: '1d' });
+      return res.json({ success: true, token, business: fromBusinessRow(row) });
+    }
+
+    const header = req.headers['authorization']?.toString() || '';
+    const idToken = header.startsWith('Bearer ') ? header.slice(7) : null;
+    if (!idToken) {
+      return res.status(401).json({ error: 'Missing Authorization Bearer token (Firebase ID token) or sandbox flag' });
+    }
+
+    let decoded;
+    try {
+      decoded = await admin.auth().verifyIdToken(idToken);
+    } catch (err: any) {
+      console.warn('[Auth] bootstrap: invalid Firebase ID token:', err?.message);
+      return res.status(401).json({ error: 'Invalid or expired Firebase session' });
+    }
+
+    const email = (decoded.email || '').toLowerCase().trim();
+    if (!email) {
+      return res.status(400).json({ error: 'Firebase account has no email on file' });
+    }
+
+    const uid = businessIdForVerifiedEmail(email);
     const existing = await pool.query('SELECT * FROM businesses WHERE id = $1', [uid]);
     let row;
     if (existing.rows.length > 0) {

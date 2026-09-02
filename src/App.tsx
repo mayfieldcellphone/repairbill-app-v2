@@ -175,9 +175,8 @@ function LoginPage() {
         await signUpWithEmail(email, password, name);
       }
     } catch (err: any) {
-      console.warn("Firebase Auth standard login failed, falling back to seamless session provisioning for:", email, err);
-      // Auto fallback to seamless login so the user's exact typed Gmail/email works instantly!
-      signInDemo(email, name || 'Mayfield Repair Store');
+      const formatted = formatAuthError(err);
+      setErrorInfo(formatted);
     } finally {
       setIsSubmitting(false);
     }
@@ -408,7 +407,7 @@ function LoginPage() {
         <div className="space-y-2">
           <button 
             type="button"
-            onClick={() => signInDemo('mayfieldcellphonerepairs@gmail.com', 'Mayfield Repair Owner')}
+            onClick={() => signInDemo('Demo Owner', 'admin')}
             className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black uppercase tracking-widest text-xs py-3 px-4 rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-md shadow-emerald-100/30 active:scale-[0.98]"
           >
             Launch as Owner (Admin Role)
@@ -417,14 +416,14 @@ function LoginPage() {
           <div className="grid grid-cols-2 gap-2">
             <button 
               type="button"
-              onClick={() => signInDemo('technician@mayfieldrepairs.com', 'Lead Tech')}
+              onClick={() => signInDemo('Lead Tech', 'user')}
               className="text-center bg-slate-50 border border-slate-100 text-slate-600 font-bold uppercase tracking-wider text-[10px] py-2 px-3 rounded-lg hover:bg-slate-100 transition-all"
             >
               Log in as Staff
             </button>
             <button 
               type="button"
-              onClick={() => signInDemo('guest@testing.com', 'Testing Guest')}
+              onClick={() => signInDemo('Testing Guest', 'user')}
               className="text-center bg-slate-50 border border-slate-100 text-slate-600 font-bold uppercase tracking-wider text-[10px] py-2 px-3 rounded-lg hover:bg-slate-100 transition-all"
             >
               Log in as Guest
@@ -500,15 +499,23 @@ export default function App() {
   useEffect(() => {
     if (!user) { setBusinessReady(false); return; }
     let cancelled = false;
-    const stableBusinessId = user.email ? `demo-user-${user.email.toLowerCase().trim().replace(/[^a-z0-9]/g, '-')}` : user.uid;
-    bootstrapBusinessSession(stableBusinessId, settings.companyName || user.displayName || user.email || undefined)
-      .then(() => { if (!cancelled) setBusinessReady(true); })
-      .catch(err => {
+    (async () => {
+      try {
+        if (profile?.isDemo) {
+          await bootstrapBusinessSession(settings.companyName || user.displayName || undefined, { sandbox: true });
+        } else {
+          const idToken = await (user as any).getIdToken?.();
+          if (!idToken) throw new Error('No authenticated Firebase session available to bootstrap.');
+          await bootstrapBusinessSession(settings.companyName || user.displayName || user.email || undefined, { idToken });
+        }
+        if (!cancelled) setBusinessReady(true);
+      } catch (err) {
         console.error('[Business] Failed to bootstrap business session:', err);
         if (!cancelled) setBusinessReady(false);
-      });
+      }
+    })();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user, profile]);
 
   // Sync Settings from Firestore
   useEffect(() => {

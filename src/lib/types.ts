@@ -207,4 +207,6 @@ export interface AppUser {
   status: 'pending' | 'active' | 'suspended';
   apiKey?: string;
   createdAt: string;
+  /** True only for the client-side sandbox mock session. Never set for a real Firebase-authenticated user. */
+  isDemo?: boolean;
 }

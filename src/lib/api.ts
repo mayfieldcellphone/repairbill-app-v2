@@ -24,11 +24,24 @@ export function clearBusinessSession() {
   localStorage.removeItem(BUSINESS_KEY);
 }
 
-export async function bootstrapBusinessSession(uid: string, name?: string, apiKey?: string) {
+// Two, and only two, ways to bootstrap a dashboard session:
+//  - { sandbox: true } -> always resolves server-side to the single shared, seeded
+//    demo business. No identity is trusted from the client on this path.
+//  - { idToken } -> a real Firebase ID token for the signed-in user; the server
+//    verifies it and derives the business from the token's own verified email.
+// There is intentionally no way to pass an arbitrary business id from here -- that
+// was the bug. Do not add a `uid` parameter back to this function.
+export async function bootstrapBusinessSession(
+  name?: string,
+  opts: { sandbox?: boolean; idToken?: string; apiKey?: string } = {}
+) {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (opts.idToken) headers['Authorization'] = `Bearer ${opts.idToken}`;
+
   const res = await fetch('/api/auth/bootstrap', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ uid, name, apiKey })
+    headers,
+    body: JSON.stringify({ sandbox: !!opts.sandbox, name, apiKey: opts.apiKey })
   });
   if (!res.ok) throw new Error('Failed to bootstrap business session');
   const data = await res.json();
