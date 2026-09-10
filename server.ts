@@ -235,7 +235,7 @@ async function startServer() {
    * Processes technician chat triggers and executes function calling with Gemini models or OpenAI.
    */
   app.post("/api/ai/assistant", async (req, res) => {
-    const { prompt, settings, brands, recentInvoices, expenses, leads } = req.body;
+    const { prompt, settings, brands, recentInvoices, expenses, leads, verifiedStats } = req.body;
 
     try {
       const isOpenAI = settings?.aiProvider === 'openai';
@@ -244,6 +244,44 @@ async function startServer() {
       const topInvoices = (recentInvoices || []).slice(0, 20);
       const topExpenses = (expenses || []).slice(0, 20);
       const topLeads = (leads || []).slice(0, 20);
+    // Fallback: if the client didn't send verifiedStats (e.g. an old cached
+    // frontend build), compute a best-effort version here from whatever was
+    // posted. This uses the SERVER's clock, so client-sent verifiedStats is
+    // preferred whenever present -- it matches the shop's local time.
+    const computedStats = (() => {
+      const d = new Date();
+      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const currentMonthStr = today.substring(0, 7);
+      const allInvoices = (recentInvoices || []).filter((inv: any) => inv.type === 'invoice');
+      const monthlyInvoices = allInvoices.filter((inv: any) => (inv.date || '').startsWith(currentMonthStr));
+      const monthlySales = monthlyInvoices.reduce((acc: number, inv: any) => acc + (inv.total || 0), 0);
+      const todaySales = allInvoices.filter((inv: any) => inv.date === today).reduce((acc: number, inv: any) => acc + (inv.total || 0), 0);
+      const monthlyExpensesList = (expenses || []).filter((exp: any) => (exp.date || '').startsWith(currentMonthStr));
+      const monthlyExpenses = monthlyExpensesList.reduce((acc: number, exp: any) => acc + (exp.amount || 0), 0);
+      const pendingInvoices = (recentInvoices || []).filter((inv: any) => inv.type === 'invoice' && ['sent', 'draft', 'overdue'].includes(inv.status));
+      const totalPending = pendingInvoices.reduce((acc: number, inv: any) => acc + (inv.total || 0), 0);
+      return {
+        today,
+        currentMonth: currentMonthStr,
+        monthlySales,
+        monthlyInvoiceCount: monthlyInvoices.length,
+        todaySales,
+        monthlyExpenses,
+        totalPending,
+        pendingInvoiceCount: pendingInvoices.length,
+        totalInvoiceCountAllTime: allInvoices.length
+      };
+    })();
+
+    const stats = verifiedStats || computedStats;
+
+    const statsContext = `VERIFIED BUSINESS STATS (calculated in code from the full dataset -- this is what the dashboard shows. ALWAYS answer totals/sales/revenue/dashboard questions directly from these numbers. Never recalculate by adding up the Recent Invoices list below -- that list is only a small recent sample, not the full data):
+        - Today's Date: ${stats.today}
+        - This Month (${stats.currentMonth}) Total Sales: $${Number(stats.monthlySales || 0).toFixed(2)} across ${stats.monthlyInvoiceCount} invoice(s)
+        - Today's Sales: $${Number(stats.todaySales || 0).toFixed(2)}
+        - This Month's Expenses: $${Number(stats.monthlyExpenses || 0).toFixed(2)}
+        - Unpaid/Pending Invoices Total: $${Number(stats.totalPending || 0).toFixed(2)} across ${stats.pendingInvoiceCount} invoice(s)
+        - Total Invoices On File: ${stats.totalInvoiceCountAllTime}`;
 
       const invoicesContext = topInvoices.length > 0
         ? `Recent Invoices: ${JSON.stringify(topInvoices.map((inv: any) => ({
@@ -287,6 +325,8 @@ async function startServer() {
             - Currency: AUD
             - Tax Rate: ${settings?.taxRate || 10}%
             - Existing Brands: ${(brands || []).map((b: any) => b.name).join(", ")}
+
+            ${statsContext}
 
             ${invoicesContext}
             ${expensesContext}

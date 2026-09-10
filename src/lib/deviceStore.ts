@@ -85,6 +85,45 @@ export const getBrandCatalog = (): Brand[] => {
   }
 };
 
+
+// Fills in any models that exist in the built-in reference catalog (brandData.ts)
+// but are missing from a brand the user already has in their live catalog -- e.g.
+// a new Samsung phone added to the app after the user first added the Samsung
+// brand. This does NOT add brands the user doesn't already have; it only
+// completes the ones they do, so nothing unexpected shows up in their catalog.
+export const fillMissingModelsForExistingBrands = (existingBrands: Brand[]): Brand[] => {
+  const referenceById = new Map<string, Brand>();
+  INITIAL_BRANDS.forEach(b => referenceById.set(b.id, b));
+
+  return existingBrands.map(brand => {
+    const reference = referenceById.get(brand.id);
+    if (!reference) return brand; // purely custom brand -- nothing to fill in
+
+    let changed = false;
+    const series = brand.series.map(s => ({ ...s, models: [...s.models] }));
+
+    reference.series.forEach(refSeries => {
+      let targetSeries = series.find(s => s.id === refSeries.id);
+      if (!targetSeries) {
+        targetSeries = { ...refSeries, models: refSeries.models.map(m => ({ ...m })) };
+        series.push(targetSeries);
+        changed = true;
+        return;
+      }
+      refSeries.models.forEach(refModel => {
+        const exists = targetSeries!.models.some(m => m.id === refModel.id);
+        if (!exists) {
+          targetSeries!.models.push({ ...refModel });
+          changed = true;
+        }
+      });
+    });
+
+    if (!changed) return brand;
+    return { ...brand, series };
+  });
+};
+
 export const saveBrandOrder = (brands: Brand[]) => {
   updateLocalStorage(brands);
 };

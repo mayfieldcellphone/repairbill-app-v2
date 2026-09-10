@@ -120,6 +120,52 @@ export function ReportsView({ invoices, expenses, settings }: ReportsViewProps) 
     
     return { income, cost, profit, margin };
   }, [filteredInvoices, filteredExpenses]);
+  const handleDownloadReport = () => {
+    const rows = [
+      ...filteredInvoices.map(inv => ({
+        date: inv.date,
+        description: inv.customerName,
+        type: 'Income' as const,
+        category: inv.items[0]?.modelName || 'Service',
+        amount: inv.total,
+      })),
+      ...filteredExpenses.map(exp => ({
+        date: exp.date,
+        description: exp.description,
+        type: 'Expense' as const,
+        category: exp.category,
+        amount: -exp.amount,
+      })),
+    ].sort((a, b) => b.date.localeCompare(a.date));
+
+    const escapeCsv = (value: string | number) => {
+      const str = String(value);
+      return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+    };
+
+    const lines = [
+      ['Date', 'Description', 'Type', 'Category', 'Amount'].join(','),
+      ...rows.map(r => [r.date, escapeCsv(r.description), r.type, escapeCsv(r.category), r.amount.toFixed(2)].join(',')),
+      '',
+      ['Total Income', '', '', '', stats.income.toFixed(2)].join(','),
+      ['Total Expenses', '', '', '', stats.cost.toFixed(2)].join(','),
+      ['Net Profit', '', '', '', stats.profit.toFixed(2)].join(','),
+    ];
+
+    const csvContent = lines.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const periodLabel = timeInterval === 'custom' && customRange.start && customRange.end
+      ? `${customRange.start}_to_${customRange.end}`
+      : timeInterval;
+    link.href = url;
+    link.setAttribute('download', `RepairBill-Report-${periodLabel}-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   const monthlyChartData = useMemo(() => {
     // Show last 6 months for context
@@ -201,7 +247,7 @@ export function ReportsView({ invoices, expenses, settings }: ReportsViewProps) 
             ))}
           </div>
           
-          <button className="p-2.5 bg-muted rounded-xl border border-border text-muted-foreground hover:text-foreground transition-all">
+          <button onClick={handleDownloadReport} title="Download CSV report" className="p-2.5 bg-muted rounded-xl border border-border text-muted-foreground hover:text-foreground transition-all">
             <Download size={18} />
           </button>
         </div>

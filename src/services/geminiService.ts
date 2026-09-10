@@ -9,8 +9,42 @@ export async function processInvoiceRequest(
   leads: any[] = []
 ) {
   try {
+        // Verified stats: computed here, in code, over the FULL invoice/expense
+    // lists using the exact same logic as the dashboard (RepairDashboard.tsx).
+    // The AI is sent these numbers directly and is told never to add up the
+    // invoice list itself -- that's what caused wrong monthly totals before.
+    const today = (() => {
+      const d = new Date();
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    })();
+    const currentMonthStr = today.substring(0, 7); // YYYY-MM
+
+    const allInvoicesForStats = (recentInvoices || []).filter(inv => inv.type === 'invoice');
+    const monthlyInvoicesForStats = allInvoicesForStats.filter(inv => (inv.date || '').startsWith(currentMonthStr));
+    const monthlySales = monthlyInvoicesForStats.reduce((acc, inv) => acc + (inv.total || 0), 0);
+    const todaySales = allInvoicesForStats.filter(inv => inv.date === today).reduce((acc, inv) => acc + (inv.total || 0), 0);
+    const monthlyExpensesListForStats = (expenses || []).filter((exp: any) => (exp.date || '').startsWith(currentMonthStr));
+    const monthlyExpenses = monthlyExpensesListForStats.reduce((acc: number, exp: any) => acc + (exp.amount || 0), 0);
+    const pendingInvoicesForStats = (recentInvoices || []).filter(inv => inv.type === 'invoice' && ['sent', 'draft', 'overdue'].includes(inv.status));
+    const totalPending = pendingInvoicesForStats.reduce((acc, inv) => acc + (inv.total || 0), 0);
+
+    const verifiedStats = {
+      today,
+      currentMonth: currentMonthStr,
+      monthlySales,
+      monthlyInvoiceCount: monthlyInvoicesForStats.length,
+      todaySales,
+      monthlyExpenses,
+      totalPending,
+      pendingInvoiceCount: pendingInvoicesForStats.length,
+      totalInvoiceCountAllTime: allInvoicesForStats.length
+    };
+
     // Slice to top 20 items and map to only necessary properties to minimize payload size
-    const topInvoices = (recentInvoices || []).slice(0, 20).map(inv => ({
+    const topInvoices = (recentInvoices || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 20).map(inv => ({
       invoiceNumber: inv.invoiceNumber,
       customerName: inv.customerName,
       total: inv.total,
@@ -48,7 +82,8 @@ export async function processInvoiceRequest(
         brands,
         recentInvoices: topInvoices,
         expenses: topExpenses,
-        leads: topLeads
+        leads: topLeads,
+        verifiedStats
       })
     });
 

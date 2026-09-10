@@ -41,7 +41,7 @@ import { AccountsOverview } from './components/AccountsOverview';
 import { TRANSACTIONS, METRICS } from './lib/mockData';
 import { motion, AnimatePresence } from 'motion/react';
 import { Invoice, InvoiceSettings, Expense, Brand, Customer, Supplier, Lead, RepairService } from './lib/types';
-import { getBrandCatalog, saveBrandOrder } from './lib/deviceStore';
+import { getBrandCatalog, saveBrandOrder, fillMissingModelsForExistingBrands } from './lib/deviceStore';
 import { getSavedServices } from './lib/serviceData';
 import { cn } from '@/lib/utils';
 
@@ -151,7 +151,7 @@ const DEFAULT_MAYFIELD_INVOICES: Invoice[] = [
 const MOCK_INVOICES: Invoice[] = [];
 
 function LoginPage() {
-  const { signIn, signInWithEmail, signUpWithEmail, resetPassword, signInDemo } = useAuth();
+  const { signIn, signInWithEmail, signUpWithEmail, resetPassword } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -393,43 +393,6 @@ function LoginPage() {
           Google Account
         </button>
 
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-100"></div>
-          </div>
-          <div className="relative flex justify-center text-[10px]">
-            <span className="px-3 py-0.5 bg-white text-emerald-600 font-black uppercase tracking-widest text-[9px] flex items-center gap-1 bg-emerald-50 rounded-full border border-emerald-100">
-              <Sparkles size={10} className="text-emerald-500 animate-pulse" /> Instant Sandbox Login
-            </span>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <button 
-            type="button"
-            onClick={() => signInDemo('Demo Owner', 'admin')}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black uppercase tracking-widest text-xs py-3 px-4 rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-md shadow-emerald-100/30 active:scale-[0.98]"
-          >
-            Launch as Owner (Admin Role)
-          </button>
-          
-          <div className="grid grid-cols-2 gap-2">
-            <button 
-              type="button"
-              onClick={() => signInDemo('Lead Tech', 'user')}
-              className="text-center bg-slate-50 border border-slate-100 text-slate-600 font-bold uppercase tracking-wider text-[10px] py-2 px-3 rounded-lg hover:bg-slate-100 transition-all"
-            >
-              Log in as Staff
-            </button>
-            <button 
-              type="button"
-              onClick={() => signInDemo('Testing Guest', 'user')}
-              className="text-center bg-slate-50 border border-slate-100 text-slate-600 font-bold uppercase tracking-wider text-[10px] py-2 px-3 rounded-lg hover:bg-slate-100 transition-all"
-            >
-              Log in as Guest
-            </button>
-          </div>
-        </div>
 
         <p className="text-center mt-5 text-xs font-medium text-slate-500">
           {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
@@ -464,6 +427,58 @@ export default function App() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [brands, setBrands] = useState<Brand[]>(() => getBrandCatalog());
   const [services, setServices] = useState<RepairService[]>(() => getSavedServices());
+
+  // Usage-frequency counts from ALL invoice line items (all time) -- used to
+  // automatically surface the most-used brands, models, and services first,
+  // everywhere they're picked from (Catalog, invoice creator, dashboard quick
+  // buttons), instead of the user having to manually reorder them.
+  const usageCounts = useMemo(() => {
+    const brandCounts: Record<string, number> = {};
+    const modelCounts: Record<string, number> = {};
+    const serviceCounts: Record<string, number> = {};
+    invoices.forEach(inv => {
+      (inv.items || []).forEach(item => {
+        if (item.brandName) {
+          brandCounts[item.brandName] = (brandCounts[item.brandName] || 0) + 1;
+        }
+        if (item.brandName && item.modelName) {
+          const key = `${item.brandName}|||${item.modelName}`;
+          modelCounts[key] = (modelCounts[key] || 0) + 1;
+        }
+        if (item.serviceName) {
+          serviceCounts[item.serviceName] = (serviceCounts[item.serviceName] || 0) + 1;
+        }
+      });
+    });
+    return { brandCounts, modelCounts, serviceCounts };
+  }, [invoices]);
+
+  // Brands (and their models) sorted most-used-first. Ties -- including brands
+  // that have never been used yet -- keep whatever order they were already in,
+  // so manual drag-and-drop ordering in Catalog still matters until usage data
+  // breaks the tie.
+  const sortedBrands = useMemo(() => {
+    const { brandCounts, modelCounts } = usageCounts;
+    return [...brands]
+      .sort((a, b) => (brandCounts[b.name] || 0) - (brandCounts[a.name] || 0))
+      .map(brand => ({
+        ...brand,
+        series: brand.series.map(series => ({
+          ...series,
+          models: [...series.models].sort((a, b) => {
+            const countA = modelCounts[`${brand.name}|||${a.name}`] || 0;
+            const countB = modelCounts[`${brand.name}|||${b.name}`] || 0;
+            return countB - countA;
+          })
+        }))
+      }));
+  }, [brands, usageCounts]);
+
+  // Services sorted most-used-first, same tie-breaking rule as brands above.
+  const sortedServices = useMemo(() => {
+    const { serviceCounts } = usageCounts;
+    return [...services].sort((a, b) => (serviceCounts[b.name] || 0) - (serviceCounts[a.name] || 0));
+  }, [services, usageCounts]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -610,8 +625,16 @@ export default function App() {
           // Fallback to alphabetical if no custom order is found
           sorted = [...data].sort((a, b) => a.name.localeCompare(b.name));
         }
-        setBrands(sorted);
-        saveBrandOrder(sorted);
+        const filled = fillMissingModelsForExistingBrands(sorted);
+          setBrands(filled);
+        saveBrandOrder(filled);
+          // Persist any newly-filled-in models back to Firestore so the live
+          // catalog itself stays complete, not just this session's local view.
+          const changedBrands = filled.filter((fb: Brand, i: number) => JSON.stringify(fb) !== JSON.stringify(sorted[i]));
+          if (changedBrands.length > 0 && user) {
+            const batchData = changedBrands.map((brand: Brand) => ({ id: brand.id, data: brand }));
+            saveDocumentsBatch(`users/${user.uid}/brands`, batchData).catch((err: any) => console.error('Failed to sync updated catalog to Firestore', err));
+          }
       }
     });
   }, [user]);
@@ -1019,6 +1042,17 @@ export default function App() {
     setEditingInvoice(null);
     setShowCreator(false);
     setSelectedInvoice(invoice);
+
+  // Brand-new invoices/quotes return to the Dashboard once saved; edits to an
+  // existing invoice stay on Invoice/Estimate Management where the user was.
+  // Checked against the invoices list itself (not the editingInvoice UI state,
+  // which several "quick create" entry points -- Catalog, dashboard shortcuts --
+  // never set in the first place) so this is reliable no matter how the creator
+  // was opened.
+  const wasExistingInvoice = invoices.some(inv => inv.id === invoice.id);
+  if (!wasExistingInvoice) {
+    setActiveTab('dashboard');
+  }
   };
 
   const deleteInvoice = async (id: string) => {
@@ -1389,7 +1423,7 @@ export default function App() {
                     invoices={invoices} 
                     expenses={expenses}
                     settings={settings} 
-                    brands={brands}
+                    brands={sortedBrands}
                     onCreateInvoice={() => {
                       setCreatorType('invoice');
                       setActiveTab('invoices');
@@ -1440,9 +1474,9 @@ export default function App() {
                 exit={{ opacity: 0, scale: 0.95 }}
               >
                 <CatalogView 
-                  brands={brands} 
+                  brands={sortedBrands} 
                   onCatalogUpdate={handleCatalogUpdate}
-                  services={services}
+                  services={sortedServices}
                   onServicesUpdate={handleServicesUpdate}
                   settings={settings}
                   onSettingsUpdate={handleSettingsUpdate}
@@ -1518,7 +1552,7 @@ export default function App() {
                   <div className="lg:col-span-7 xl:col-span-8">
                     <AIInvoiceAgent 
                        settings={settings}
-                       brands={brands}
+                       brands={sortedBrands}
                        invoices={invoices}
                        expenses={expenses}
                        leads={leads}
@@ -1582,7 +1616,7 @@ export default function App() {
                   setSettings={handleSettingsUpdate} 
                   onBrandsReordered={handleBrandsReordered}
                   onCatalogUpdate={handleCatalogUpdate}
-                  services={services}
+                  services={sortedServices}
                   onServicesUpdate={handleServicesUpdate}
                 />
               </motion.div>
@@ -1632,9 +1666,9 @@ export default function App() {
                       invoiceToEdit={editingInvoice}
                       nextInvoiceNumber={nextInvoiceNumber}
                       initialType={creatorType}
-                      brands={brands}
+                      brands={sortedBrands}
                       onCatalogUpdate={handleCatalogUpdate}
-                      services={services}
+                      services={sortedServices}
                       onServicesUpdate={handleServicesUpdate}
                       initialBrandName={presetBrandName}
                       initialServiceName={presetServiceName}
