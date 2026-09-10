@@ -121,9 +121,8 @@ router.post('/api/auth/bootstrap', async (req, res) => {
 
   try {
     if (sandbox === true) {
-      const row = await ensureSandboxBusiness();
-      const token = jwt.sign({ businessId: row.id }, JWT_SECRET, { expiresIn: '1d' });
-      return res.json({ success: true, token, business: fromBusinessRow(row) });
+      // Sandbox / demo login removed 2026-09-10 at the owner's request.
+      return res.status(403).json({ error: 'Sandbox login is disabled' });
     }
 
     const header = req.headers['authorization']?.toString() || '';

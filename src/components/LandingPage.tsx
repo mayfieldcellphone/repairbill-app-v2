@@ -240,7 +240,7 @@ const allBlogPosts = [
 ];
 
 export function LandingPage() {
-  const { signIn, signInWithEmail, signUpWithEmail, resetPassword, signInDemo } = useAuth();
+  const { signIn, signInWithEmail, signUpWithEmail, resetPassword } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -268,9 +268,7 @@ export function LandingPage() {
         await signUpWithEmail(email, password, name);
       }
     } catch (err: any) {
-      console.warn("Firebase Auth standard login failed, seamlessly provisioning user session for:", email, err);
-      signInDemo(email, name || 'Mayfield Repair Store');
-      setShowAuthModal(false);
+      setErrorInfo(formatAuthError(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -380,15 +378,6 @@ export function LandingPage() {
 
           <div className="flex items-center gap-3">
             <button 
-              onClick={() => {
-                signInDemo('mayfieldcellphonerepairs@gmail.com', 'Mayfield Repair Owner');
-              }}
-              className="hidden sm:flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-3.5 py-1.5 rounded-full text-xs font-black hover:bg-emerald-100 transition-all"
-            >
-              <Sparkles size={14} className="text-emerald-500 animate-pulse" />
-              Instant Sandbox
-            </button>
-            <button 
               onClick={() => { setIsLogin(true); setShowAuthModal(true); }}
               className="text-sm font-bold text-slate-600 hover:text-blue-600 px-3 py-2"
             >
@@ -430,15 +419,6 @@ export function LandingPage() {
               >
                 Create Your Shop
                 <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button 
-                onClick={() => {
-                  signInDemo('mayfieldcellphonerepairs@gmail.com', 'Mayfield Repair Owner');
-                }}
-                className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-base font-black tracking-tight shadow-xl shadow-emerald-200 hover:bg-emerald-700 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
-              >
-                <Sparkles size={18} className="animate-pulse text-emerald-200" />
-                Instant Sandbox Mode
               </button>
             </div>
             
@@ -1300,52 +1280,6 @@ export function LandingPage() {
               </button>
             </form>
 
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-100"></div>
-              </div>
-              <div className="relative flex justify-center text-[10px]">
-                <span className="px-3 py-0.5 bg-white text-emerald-600 font-black uppercase tracking-widest text-[9px] flex items-center gap-1 bg-emerald-50 rounded-full border border-emerald-100">
-                  <Sparkles size={10} className="text-emerald-500 animate-pulse" /> Instant Sandbox Login
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <button 
-                type="button"
-                onClick={() => {
-                  signInDemo('mayfieldcellphonerepairs@gmail.com', 'Mayfield Repair Owner');
-                  setShowAuthModal(false);
-                }}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black uppercase tracking-widest text-xs py-3 px-4 rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-md shadow-emerald-100/30 active:scale-[0.98]"
-              >
-                Launch as Owner (Admin Role)
-              </button>
-              
-              <div className="grid grid-cols-2 gap-2">
-                <button 
-                  type="button"
-                  onClick={() => {
-                    signInDemo('technician@mayfieldrepairs.com', 'Lead Tech');
-                    setShowAuthModal(false);
-                  }}
-                  className="text-center bg-slate-50 border border-slate-100 text-slate-600 font-bold uppercase tracking-wider text-[10px] py-2 px-3 rounded-lg hover:bg-slate-100 transition-all"
-                >
-                  Log in as Staff
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => {
-                    signInDemo('guest@testing.com', 'Testing Guest');
-                    setShowAuthModal(false);
-                  }}
-                  className="text-center bg-slate-50 border border-slate-100 text-slate-600 font-bold uppercase tracking-wider text-[10px] py-2 px-3 rounded-lg hover:bg-slate-100 transition-all"
-                >
-                  Log in as Guest
-                </button>
-              </div>
-            </div>
 
             <div className="mt-5 text-center">
               <p className="text-xs font-bold text-slate-400">

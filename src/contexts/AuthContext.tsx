@@ -32,7 +32,7 @@ export function formatAuthError(err: any): { message: string; code?: string } {
   ) {
     return {
       code: 'invalid-credential',
-      message: 'Incorrect email or password, or no account exists with this email yet. If you are new, click "Sign Up" below to create an account, or use Instant Sandbox Login.'
+      message: 'Incorrect email or password, or no account exists with this email yet. If you are new, click "Sign Up" below to create an account.'
     };
   }
 
@@ -46,7 +46,7 @@ export function formatAuthError(err: any): { message: string; code?: string } {
   if (extractedCode.includes('operation-not-allowed') || rawMsg.includes('operation-not-allowed')) {
     return {
       code: 'operation-not-allowed',
-      message: 'Email/Password sign-in is not enabled in Firebase Console yet. You can sign in using Google Auth or Instant Sandbox Login below!'
+      message: 'Email/Password sign-in is not enabled in the Firebase console yet. Use Google sign-in, or enable Email/Password in Firebase.'
     };
   }
 
@@ -74,7 +74,7 @@ export function formatAuthError(err: any): { message: string; code?: string } {
   if (extractedCode.includes('unauthorized-domain') || rawMsg.includes('authorized domain')) {
     return {
       code: 'unauthorized-domain',
-      message: 'This preview domain is not authorized in your Firebase console yet. You can use Google Auth or Instant Sandbox Login below!'
+      message: 'This domain is not authorized in your Firebase console yet. Add it under Authentication > Settings > Authorized domains.'
     };
   }
 
@@ -97,13 +97,13 @@ export function formatAuthError(err: any): { message: string; code?: string } {
     const formattedCodeName = match[1].replace(/-/g, ' ');
     return {
       code: extractedCode,
-      message: `Firebase Auth Error (${formattedCodeName}). Please check your login credentials or use Instant Sandbox Login below.`
+      message: `Firebase Auth Error (${formattedCodeName}). Please check your login credentials.`
     };
   }
 
   return {
     code: extractedCode || 'auth-error',
-    message: 'Authentication failed. Please verify your credentials or click Instant Sandbox Login below to test with full privileges.'
+    message: 'Authentication failed. Please verify your credentials and try again.'
   };
 }
 
