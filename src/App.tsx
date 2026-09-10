@@ -42,6 +42,7 @@ import { TRANSACTIONS, METRICS } from './lib/mockData';
 import { motion, AnimatePresence } from 'motion/react';
 import { Invoice, InvoiceSettings, Expense, Brand, Customer, Supplier, Lead, RepairService } from './lib/types';
 import { getBrandCatalog, saveBrandOrder, fillMissingModelsForExistingBrands } from './lib/deviceStore';
+import { LeadNotifications } from './components/LeadNotifications';
 import { getSavedServices } from './lib/serviceData';
 import { cn } from '@/lib/utils';
 
@@ -1311,7 +1312,10 @@ export default function App() {
             setInvoiceFilter(null);
           }}
           settings={settings}
+          newLeadCount={leads.filter((l) => l.status === 'new').length}
         />
+
+        <LeadNotifications leads={leads} onOpenInbox={() => setActiveTab('inbox')} />
 
       <main className="flex-1 flex flex-col min-w-0">
         {/* Top Header */}

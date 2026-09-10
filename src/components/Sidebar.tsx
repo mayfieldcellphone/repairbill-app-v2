@@ -39,10 +39,11 @@ const navItems = [
   { id: 'import', icon: <Upload size={20} />, label: 'Import' },
 ];
 
-export function Sidebar({ activeTab, setActiveTab, settings }: { 
+export function Sidebar({ activeTab, setActiveTab, settings, newLeadCount = 0 }: { 
   activeTab: string,
   setActiveTab: (val: string) => void,
-  settings: any
+  settings: any,
+  newLeadCount?: number
 }) {
   const { user, profile, logout } = useAuth();
   const theme = settings?.appTheme || 'modern';
@@ -126,6 +127,17 @@ export function Sidebar({ activeTab, setActiveTab, settings }: {
                 {item.icon}
               </span>
               <span className="hidden md:block truncate">{item.label}</span>
+              {item.id === 'inbox' && newLeadCount > 0 && (
+                <span
+                  className={cn(
+                    "ml-auto inline-flex items-center justify-center font-black text-[9px] px-2 py-0.5 rounded-full min-w-5 h-5 select-none",
+                    isActive ? "bg-white text-blue-600" : "bg-blue-600 text-white animate-pulse"
+                  )}
+                  title={`${newLeadCount} unread lead${newLeadCount === 1 ? '' : 's'}`}
+                >
+                  {newLeadCount > 99 ? '99+' : newLeadCount}
+                </span>
+              )}
             </button>
           )
         })}
