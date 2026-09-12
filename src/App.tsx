@@ -673,7 +673,21 @@ export default function App() {
     if (!user || !businessReady) return;
     refreshLeads();
     const interval = setInterval(refreshLeads, 30000);
-    return () => clearInterval(interval);
+
+    // Chrome slows background-tab timers down to about once a minute, so a lead
+    // can sit unseen for that long. Refresh the moment the tab comes back to the
+    // front - which is exactly when someone is looking at it.
+    const onWake = () => {
+      if (!document.hidden) refreshLeads();
+    };
+    document.addEventListener('visibilitychange', onWake);
+    window.addEventListener('focus', onWake);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onWake);
+      window.removeEventListener('focus', onWake);
+    };
   }, [user, businessReady]);
 
   // Sync Services from Firestore
