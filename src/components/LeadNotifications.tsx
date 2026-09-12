@@ -1,8 +1,27 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Mail, X, Bell, BellOff, ArrowRight } from 'lucide-react';
 import { Lead } from '../lib/types';
 
 const MUTE_KEY = 'rb_lead_alert_muted';
+
+/**
+ * Module scope on purpose - NOT component state.
+ *
+ * The first version kept "leads I've already seen" in a useRef. That silently
+ * failed: whenever the component remounted the ref reset, every poll then
+ * looked like a first load, and a first load deliberately stays quiet - so no
+ * alert ever fired. Module-level values survive remounts and only reset on a
+ * real page load, which is exactly the lifetime we want.
+ */
+const APP_START = Date.now();
+const alreadyShown = new Set<string>();
+
+/**
+ * Leads older than this never raise an alert. The 5-minute band absorbs clock
+ * skew between the server's createdAt and the browser clock, and means a lead
+ * that landed moments before you opened the app still gets announced.
+ */
+const CUTOFF = APP_START - 5 * 60 * 1000;
 
 const TYPE_LABELS: Record<string, string> = {
   contact: 'Enquiry',
@@ -49,7 +68,7 @@ function isMuted(): boolean {
   }
 }
 
-function setMuted(v: boolean) {
+function persistMuted(v: boolean) {
   try {
     localStorage.setItem(MUTE_KEY, v ? '1' : '0');
   } catch {
@@ -73,23 +92,20 @@ export function LeadNotifications({
   onOpenInbox: () => void;
 }) {
   const [toasts, setToasts] = useState<Lead[]>([]);
-  const [muted, setMutedState] = useState(isMuted);
-  const seenIds = useRef<Set<string> | null>(null);
+  const [muted, setMuted] = useState(isMuted);
 
   useEffect(() => {
-    // First pass: remember what was already there, announce nothing.
-    if (seenIds.current === null) {
-      seenIds.current = new Set(leads.map((l) => l.id));
-      return;
-    }
-
-    const fresh = leads.filter((l) => !seenIds.current!.has(l.id));
+    const fresh = leads.filter((l) => {
+      if (!l || !l.id || alreadyShown.has(l.id)) return false;
+      const ts = new Date(l.createdAt || 0).getTime();
+      return Number.isFinite(ts) && ts > CUTOFF;
+    });
     if (fresh.length === 0) return;
 
-    fresh.forEach((l) => seenIds.current!.add(l.id));
+    fresh.forEach((l) => alreadyShown.add(l.id));
     setToasts((prev) => [...fresh, ...prev].slice(0, 4));
 
-    if (!muted) playChime();
+    if (!isMuted()) playChime();
 
     // Desktop notification when the tab is in the background.
     try {
@@ -107,7 +123,7 @@ export function LeadNotifications({
     } catch {
       /* notifications unavailable - the on-screen card is enough */
     }
-  }, [leads, muted]);
+  }, [leads]);
 
   // Each card clears itself after 14 seconds. The Inbox badge is what persists.
   useEffect(() => {
@@ -120,8 +136,8 @@ export function LeadNotifications({
 
   const toggleMute = () => {
     const next = !muted;
-    setMutedState(next);
     setMuted(next);
+    persistMuted(next);
   };
 
   if (toasts.length === 0) return null;
