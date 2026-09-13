@@ -16,7 +16,8 @@ import {
   ArrowRight,
   FileText,
   ArrowUpRight,
-  Plus
+  Plus,
+  AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Lead, LeadReply, InvoiceSettings } from '../lib/types';
@@ -30,7 +31,7 @@ interface CommunicationCenterProps {
   onAddLead: (lead: Lead) => Promise<void>;
   onDeleteLead: (id: string) => Promise<void>;
   onConvertToQuote: (lead: Lead) => void;
-  onSendReply: (id: string, message: string) => Promise<void>;
+  onSendReply: (id: string, message: string) => Promise<{ emailSent: boolean; emailError?: string } | void>;
 }
 
 export function CommunicationCenter({ 
@@ -48,6 +49,7 @@ export function CommunicationCenter({
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [isReplying, setIsReplying] = useState(false);
+  const [replyStatus, setReplyStatus] = useState<{ ok: boolean; text: string } | null>(null);
 
   const theme = settings.appTheme;
 
@@ -67,8 +69,17 @@ export function CommunicationCenter({
 
   const selectedLead = leads.find(l => l.id === selectedLeadId);
 
+  // Leads that arrive from the website form without an address are stored with a
+  // placeholder. Treat that as "no email" so the screen never implies a reply was
+  // delivered to it.
+  const emailFor = (lead?: Lead) =>
+    lead && lead.customerEmail && lead.customerEmail !== 'no-email@provided.com'
+      ? lead.customerEmail
+      : null;
+
   const handleLeadClick = async (lead: Lead) => {
     setSelectedLeadId(lead.id);
+    setReplyStatus(null);
     if (lead.status === 'new') {
       await onUpdateLead(lead.id, { status: 'read' });
     }
@@ -76,14 +87,29 @@ export function CommunicationCenter({
 
   const handleSendReply = async () => {
     if (!selectedLead || !replyText.trim() || isReplying) return;
-    
+
+    const to = emailFor(selectedLead);
     setIsReplying(true);
+    setReplyStatus(null);
     try {
-      await onSendReply(selectedLead.id, replyText.trim());
+      const result = await onSendReply(selectedLead.id, replyText.trim());
       setReplyText('');
+      if (result && result.emailSent) {
+        setReplyStatus({ ok: true, text: `Sent to ${to}` });
+      } else if (to) {
+        setReplyStatus({
+          ok: false,
+          text: `Saved here, but the email did not go out, so ${to} has not seen it${result && result.emailError ? ` - ${result.emailError}` : ''}`
+        });
+      } else {
+        setReplyStatus({
+          ok: false,
+          text: 'Saved here only. This lead left no email address, so nothing was sent - call or text them instead.'
+        });
+      }
     } catch (error) {
       console.error('Error sending reply:', error);
-      alert('Failed to send reply. Please check your connection and try again.');
+      setReplyStatus({ ok: false, text: 'Could not save the reply. Check your connection and try again.' });
     } finally {
       setIsReplying(false);
     }
@@ -446,7 +472,9 @@ export function CommunicationCenter({
                        </div>
                        <div>
                          <h3 className="text-sm font-black uppercase tracking-widest text-white">Craft Response</h3>
-                         <p className="text-[10px] text-white/40 font-bold uppercase">Reply saved to this conversation</p>
+                         <p className="text-[10px] text-white/40 font-bold uppercase truncate max-w-[16rem]">
+                           {emailFor(selectedLead) ? `Emails ${emailFor(selectedLead)}` : 'No email address on file'}
+                         </p>
                        </div>
                     </div>
 
@@ -456,6 +484,30 @@ export function CommunicationCenter({
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
                     />
+
+                    {!emailFor(selectedLead) && (
+                      <div className="flex items-start gap-2.5 -mt-2 mb-6 px-4 py-3 rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-200">
+                        <AlertTriangle size={15} className="shrink-0 mt-0.5" />
+                        <p className="text-xs font-semibold leading-snug">
+                          This lead left no email address. A reply is kept here for your records, but
+                          the customer will not receive it{selectedLead.customerPhone ? ` - call or text ${selectedLead.customerPhone}` : ''}.
+                        </p>
+                      </div>
+                    )}
+
+                    {replyStatus && (
+                      <div className={cn(
+                        "flex items-start gap-2.5 -mt-2 mb-6 px-4 py-3 rounded-2xl border",
+                        replyStatus.ok
+                          ? "bg-emerald-400/10 border-emerald-400/20 text-emerald-200"
+                          : "bg-amber-400/10 border-amber-400/20 text-amber-200"
+                      )}>
+                        {replyStatus.ok
+                          ? <CheckCircle size={15} className="shrink-0 mt-0.5" />
+                          : <AlertTriangle size={15} className="shrink-0 mt-0.5" />}
+                        <p className="text-xs font-semibold leading-snug">{replyStatus.text}</p>
+                      </div>
+                    )}
 
                     <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                        <p className="text-[10px] text-white/30 font-bold italic tracking-wide">
@@ -470,9 +522,9 @@ export function CommunicationCenter({
                         )}
                        >
                          {isReplying ? (
-                           <>Saving... <Clock size={16} className="animate-spin" /></>
+                           <>Sending... <Clock size={16} className="animate-spin" /></>
                          ) : (
-                           <>Save Reply <ArrowRight size={16} /></>
+                           <>Send Reply <ArrowRight size={16} /></>
                          )}
                        </button>
                     </div>

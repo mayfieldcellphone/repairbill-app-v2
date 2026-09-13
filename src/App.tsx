@@ -1222,19 +1222,27 @@ export default function App() {
   };
 
   const sendReplyToLead = async (id: string, message: string) => {
-    if (!user) return;
+    if (!user) return { emailSent: false, emailError: 'You are not signed in.' };
     try {
       const res = await apiFetch(`/api/leads/${id}/replies`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, author: settings.companyName || 'Team' })
       });
-      if (res.ok) {
-        const { data } = await res.json();
-        setLeads(prev => prev.map(l => l.id === id ? data : l));
+      if (!res.ok) {
+        return { emailSent: false, emailError: `The reply could not be saved (server returned ${res.status}).` };
       }
+
+      // The server answers two separate questions: was the reply stored, and did the
+      // customer's email actually go out. Both are returned to the caller, because a
+      // reply that saved but never reached the customer used to look identical on
+      // screen to one that did.
+      const { data, emailSent, emailError } = await res.json();
+      setLeads(prev => prev.map(l => l.id === id ? data : l));
+      return { emailSent: emailSent === true, emailError };
     } catch (err) {
       console.error('[Leads] Failed to send reply:', err);
+      return { emailSent: false, emailError: 'Could not reach the server.' };
     }
   };
 
